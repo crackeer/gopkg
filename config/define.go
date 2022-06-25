@@ -27,3 +27,22 @@ type YamlAPIItem struct {
 	Header      map[string]string `yaml:"header"`
 	Timeout     int64             `yaml:"timeout"`
 }
+
+// YamlGroupPage
+type YamlGroupPage struct {
+	Tag  string               `yaml:"tag"`
+	List map[string]*YamlPage `yaml:"list"`
+}
+
+// YamlAPIConfig
+type YamlPage struct {
+	DataAPI       string                 `yaml:"data_api"`
+	Type          string                 `yaml:"type"`
+	Extension     map[string]interface{} `yaml:"extension"`
+	DefaultParams map[string]interface{} `yaml:"default_params"`
+	Title         string                 `yaml:"title"`
+	HrefTitle     string                 `yaml:"href_title"`
+
+	FrameFile   string `yaml:"frame_file"`
+	ContentFile string `yaml:"content_file"`
+}

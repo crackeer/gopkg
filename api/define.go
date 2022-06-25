@@ -19,7 +19,7 @@ type APIMeta struct {
 type APIResponse struct {
 	Code           string
 	Message        string
-	Data           interface{}
+	Data           string
 	HttpStatusCode int64
 	OriginBody     []byte
 }

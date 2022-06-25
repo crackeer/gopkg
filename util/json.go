@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"reflect"
-	"strconv"
 
 	jsoniter "github.com/json-iterator/go"
 )
@@ -64,34 +63,12 @@ func Unmarshalx(input []byte, data interface{}) error {
 	return jsonX.Unmarshal(input, &data)
 }
 
-// Serialize ...
-func Serialize(value interface{}) (string, error) {
-
-	if value == nil {
-		return "", nil
-	}
-
-	if val, ok := value.(string); ok {
-		return val, nil
-	}
-
-	if val, ok := value.(error); ok {
-		return val.Error(), nil
-	}
-
-	if val, ok := value.(float32); ok {
-		return strconv.FormatFloat(float64(val), 'f', -1, 64), nil
-	}
-
-	if val, ok := value.(float64); ok {
-		return strconv.FormatFloat(val, 'f', -1, 64), nil
-	}
-
-	byteData, err := Marshal(value)
-
-	if err != nil {
+func MarshalEscapeHtml(data interface{}) (string, error) {
+	bf := bytes.NewBuffer([]byte{})
+	jsonEncoder := json.NewEncoder(bf)
+	jsonEncoder.SetEscapeHTML(false)
+	if err := jsonEncoder.Encode(data); err != nil {
 		return "", err
 	}
-
-	return string(byteData), nil
+	return bf.String(), nil
 }

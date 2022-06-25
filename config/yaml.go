@@ -35,3 +35,13 @@ func LoadYamlAPIConfig(path string) (*YamlAPI, error) {
 	err := LoadYamlConfig(path, retData)
 	return retData, err
 }
+
+// LoadYamlPageConfig
+//  @param path
+//  @return *YamlPage
+//  @return error
+func LoadYamlGroupPageConfig(path string) (*YamlGroupPage, error) {
+	retData := &YamlGroupPage{}
+	err := LoadYamlConfig(path, retData)
+	return retData, err
+}
