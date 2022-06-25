@@ -32,7 +32,7 @@ type APIRequest struct {
 
 // APIMetaGetter
 type APIMetaGetter interface {
-	GetAPIMeta(string) (*APIMeta, error)
+	GetAPIMeta(string, string) (*APIMeta, error)
 }
 
 type Logger interface {

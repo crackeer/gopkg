@@ -39,8 +39,8 @@ func NewRequestClient(getter APIMetaGetter) *RequestClient {
 //  @param header
 //  @return *APIResponse
 //  @return error
-func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string) (*APIResponse, error) {
-	apiMeta, err := client.factory.GetAPIMeta(apiID)
+func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string, env string) (*APIResponse, error) {
+	apiMeta, err := client.factory.GetAPIMeta(apiID, env)
 	if err != nil {
 		return nil, fmt.Errorf("get api meta error: %s", err.Error())
 	}
@@ -54,7 +54,7 @@ func (client *RequestClient) Request(apiID string, query map[string]interface{},
 //  @param list
 //  @return map[string]*APIResponse
 //  @return error
-func (client *RequestClient) RequestList(list []*RequestItem) (map[string]*APIResponse, map[string]string, error) {
+func (client *RequestClient) RequestList(list []*RequestItem, env string) (map[string]*APIResponse, map[string]string, error) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(list))
@@ -67,7 +67,7 @@ func (client *RequestClient) RequestList(list []*RequestItem) (map[string]*APIRe
 
 	for _, item := range list {
 		go func(tmp *RequestItem) {
-			apiResponse, err := client.Request(tmp.APIID, tmp.Params, tmp.Header)
+			apiResponse, err := client.Request(tmp.APIID, tmp.Params, tmp.Header, env)
 			locker.Lock()
 			defer locker.Unlock()
 			if err != nil {
@@ -91,7 +91,7 @@ func (client *RequestClient) RequestList(list []*RequestItem) (map[string]*APIRe
 //  @param list
 //  @return map[string]*APIResponse
 //  @return error
-func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interface{}, header map[string]string) (map[string]*APIResponse, map[string]string, error) {
+func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interface{}, header map[string]string, env string) (map[string]*APIResponse, map[string]string, error) {
 
 	var (
 		retError error
@@ -110,7 +110,7 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 			retError = err
 			break
 		}
-		mapAPIResponse, mapError, err := client.RequestList(newItems)
+		mapAPIResponse, mapError, err := client.RequestList(newItems, env)
 		if err != nil {
 			retError = err
 			break

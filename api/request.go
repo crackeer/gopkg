@@ -2,7 +2,6 @@ package api
 
 import (
 	"bytes"
-	"compress/gzip"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -80,12 +79,7 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 
 		var byteBody []byte
 
-		if response.Header.Get("Content-Encoding") == "" {
-			gzipRd, _ := gzip.NewReader(response.Body)
-			byteBody, err = ioutil.ReadAll(gzipRd)
-		} else {
-			byteBody, err = ioutil.ReadAll(response.Body)
-		}
+		byteBody, err = ioutil.ReadAll(response.Body)
 
 		if err != nil {
 			retError = fmt.Errorf("read request body error: %s", err.Error())
