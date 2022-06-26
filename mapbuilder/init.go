@@ -71,11 +71,11 @@ func init() {
 		}
 		switch arg {
 		case "bool":
-			val := util.GetBooleanValFromMap(container, "key")
+			val := util.LoadMap(container).GetBool("key", false)
 			byteData, _ := util.Marshal(val)
 			return string(byteData)
 		case "int":
-			val := util.GetInt64ValFromMap(container, "key")
+			val := util.LoadMap(container).GetInt64("key", 0)
 			byteData, _ := util.Marshal(val)
 			return string(byteData)
 		}

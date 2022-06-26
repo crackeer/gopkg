@@ -5,155 +5,31 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"time"
-
-	"github.com/morysky/melody"
 )
 
-// GetStringFromSession Get a string param from websocket session
-func GetStringFromSession(wsSession *melody.Session, key string, defaultValue string) string {
-	var (
-		ok       bool
-		value    string
-		rawValue interface{}
-	)
+// MapContainer
+type MapContainer struct {
+	value map[string]interface{}
+}
 
-	if wsSession == nil {
-		return defaultValue
+// LoadMap
+//  @param data
+//  @return *MapContainer
+func LoadMap(data map[string]interface{}) *MapContainer {
+	return &MapContainer{
+		value: data,
 	}
+}
 
-	rawValue, ok = wsSession.Get(key)
+// GetInt64 ...
+//  @receiver container
+//  @param key
+//  @return int64
+func (container *MapContainer) GetInt64(key string, defaultValue int64) int64 {
+	val, ok := container.value[key]
+
 	if !ok {
 		return defaultValue
-	}
-
-	value, ok = rawValue.(string)
-	if !ok {
-		return defaultValue
-	}
-
-	return value
-}
-
-// GetInt64FromSession Get a int64 param from websocket session
-func GetInt64FromSession(wsSession *melody.Session, key string) int64 {
-	var (
-		ok       bool
-		err      error
-		value    int64
-		rawValue interface{}
-		strValue string
-	)
-
-	if wsSession == nil {
-		return value
-	}
-
-	rawValue, ok = wsSession.Get(key)
-	if !ok {
-		return value
-	}
-
-	if strValue, ok = rawValue.(string); ok {
-		value, err = strconv.ParseInt(strValue, 10, 64)
-		if err == nil {
-			return value
-		}
-	}
-
-	value, _ = rawValue.(int64)
-
-	return value
-}
-
-// GetInt64FromMap Get int64 value from a flat map
-func GetInt64FromMap(container map[string]interface{}, key string) int64 {
-	var ret int64
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(int64)
-	}
-
-	return ret
-}
-
-//
-func GetFloat64FromMap(container map[string]interface{}, key string) float64 {
-	var ret float64
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(float64)
-	}
-
-	return ret
-}
-
-// GetUint32FromMap Get int64 value from a flat map
-func GetUint32FromMap(container map[string]interface{}, key string) uint32 {
-	var ret uint32
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(uint32)
-	}
-
-	return ret
-}
-
-// GetDurationFromMap ...
-func GetDurationFromMap(container map[string]interface{}, key string) time.Duration {
-	var ret time.Duration
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(time.Duration)
-	}
-
-	return ret
-}
-
-// GetIntFromMap Get int value from a flat map
-func GetIntFromMap(container map[string]interface{}, key string) int {
-	var ret int
-
-	if container == nil {
-		return ret
-	}
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(int)
-	}
-
-	return ret
-}
-
-// GetStringFromMap Get string value from a flat map
-func GetStringFromMap(container map[string]interface{}, key string) string {
-	var ret string
-
-	if v, exists := container[key]; exists {
-		ret = fmt.Sprintf("%v", v)
-	}
-
-	return ret
-}
-
-// GetBoolFromMap Get boolean value from a flat map
-func GetBoolFromMap(container map[string]interface{}, key string) bool {
-	var ret bool
-
-	if v, exists := container[key]; exists {
-		ret, _ = v.(bool)
-	}
-
-	return ret
-}
-
-// GetInt64ValFromMap ...
-func GetInt64ValFromMap(container map[string]interface{}, key string) int64 {
-
-	val, ok := container[key]
-
-	if !ok {
-		return 0
 	}
 
 	if v, ok := val.(int64); ok {
@@ -178,15 +54,19 @@ func GetInt64ValFromMap(container map[string]interface{}, key string) int64 {
 			return int64(rv)
 		}
 	}
-	return 0
+	return defaultValue
 }
 
-func GetStringValFromMap(container map[string]interface{}, key string) string {
+// GetString
+//  @receiver container
+//  @param key
+//  @return string
+func (container *MapContainer) GetString(key string, defaultValue string) string {
 
-	val, ok := container[key]
+	val, ok := container.value[key]
 
 	if !ok {
-		return ""
+		return defaultValue
 	}
 
 	if v, ok := val.(json.Number); ok {
@@ -218,23 +98,15 @@ func GetStringValFromMap(container map[string]interface{}, key string) string {
 	return string(bs)
 }
 
-func ReplaceUrlParameter(urlStr string, params map[string]string) string {
+// GetBool
+//  @receiver container
+//  @param key
+//  @return bool
+func (container *MapContainer) GetBool(key string, defaultValue bool) bool {
 
-	if !strings.Contains(urlStr, "{") || params == nil {
-		return urlStr
-	}
-	for k, v := range params {
-		urlStr = strings.Replace(urlStr, fmt.Sprintf("{%s}", k), v, -1)
-	}
-
-	return urlStr
-}
-
-func GetBooleanValFromMap(container map[string]interface{}, key string) bool {
-
-	val, ok := container[key]
+	val, ok := container.value[key]
 	if !ok || val == nil {
-		return false
+		return defaultValue
 	}
 
 	if v, ok := val.(bool); ok {
@@ -266,12 +138,15 @@ func GetBooleanValFromMap(container map[string]interface{}, key string) bool {
 		return strings.ToLower(v) == "yes" || strings.ToLower(v) == "on"
 	}
 
-	return false
+	return defaultValue
 }
 
-// GetMapValFromMap ...
-func GetMapValFromMap(container map[string]interface{}, key string) map[string]interface{} {
-	val, ok := container[key]
+// GetMap ValFromMap ...
+//  @receiver container
+//  @param key
+//  @return map
+func (container *MapContainer) GetMap(key string) map[string]interface{} {
+	val, ok := container.value[key]
 	if !ok || val == nil {
 		return nil
 	}
