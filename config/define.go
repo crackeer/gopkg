@@ -53,7 +53,7 @@ type DBConfig struct {
 	File          string `yaml:"file"`
 	WriteHost     string `yaml:"write_host"`
 	WriteUser     string `yaml:"write_user"`
-	WritePassword string `yaml:"writer_password"`
+	WritePassword string `yaml:"write_password"`
 	ReadHost      string `yaml:"read_host"`
 	ReadUser      string `yaml:"read_user"`
 	ReadPassword  string `yaml:"read_password"`

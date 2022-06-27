@@ -36,7 +36,6 @@ type MySQLConfig struct {
 //  @return error
 func GetMySQLDB(dbConfig *MySQLConfig, gormConfig *gorm.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Database, dbConfig.Charset)
-
 	if gormConfig == nil {
 		gormConfig = &gorm.Config{}
 	}

@@ -19,7 +19,6 @@ func LoadYamlConfig(path string, dest interface{}) error {
 		path = fmt.Sprintf("%s%s", path, YamlExt)
 	}
 	bytes, err := ioutil.ReadFile(path)
-	fmt.Println(string(bytes))
 	if err != nil {
 		return fmt.Errorf("read config `%s` error: %s", path, err.Error())
 	}
