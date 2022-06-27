@@ -10,6 +10,15 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+
+	// DriverMySQL
+	DriverMySQL = "mysql"
+
+	// DriverSQLite
+	DriverSQLite = "sqlite"
+)
+
 // MySQLConfig
 type MySQLConfig struct {
 	User     string
@@ -25,7 +34,7 @@ type MySQLConfig struct {
 //  @return *gorm.DB
 //  @return *gorm.DB
 //  @return error
-func GetMySQLDB(dbConfig *MySQLConfig, gormConfig *gorm.Config) (*gorm.DB, *gorm.DB, error) {
+func GetMySQLDB(dbConfig *MySQLConfig, gormConfig *gorm.Config) (*gorm.DB, error) {
 	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=%s&parseTime=True&loc=Local", dbConfig.User, dbConfig.Password, dbConfig.Host, dbConfig.Database, dbConfig.Charset)
 
 	if gormConfig == nil {
@@ -41,7 +50,7 @@ func GetMySQLDB(dbConfig *MySQLConfig, gormConfig *gorm.Config) (*gorm.DB, *gorm
 //  @return *gorm.DB
 //  @return *gorm.DB
 //  @return error
-func GetSQliteDB(file string, gormConfig *gorm.Config) (*gorm.DB, *gorm.DB, error) {
+func GetSQliteDB(file string, gormConfig *gorm.Config) (*gorm.DB, error) {
 	if gormConfig == nil {
 		gormConfig = &gorm.Config{}
 	}

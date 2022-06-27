@@ -51,11 +51,11 @@ type YamlPage struct {
 type DBConfig struct {
 	Driver        string `yaml:"driver"`
 	File          string `yaml:"file"`
-	Host          string `yaml:"host"`
-	Port          int64  `yaml:"port"`
-	WriteUsername string `yaml:"write_username"`
+	ReadHost      string `yaml:"read_host"`
+	WriteHost     string `yaml:"write_host"`
+	WriteUser     string `yaml:"write_user"`
 	WritePassword string `yaml:"writer_password"`
-	ReadUsername  string `yaml:"read_username"`
+	ReadUser      string `yaml:"read_user"`
 	ReadPassword  string `yaml:"read_password"`
 	Database      string `yaml:"database"`
 	Charset       string `yaml:"charset"`

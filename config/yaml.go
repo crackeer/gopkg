@@ -8,13 +8,15 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+const YamlExt = ".yaml"
+
 // LoadYamlConfig
 //  @param path
 //  @param dest
 //  @return error
 func LoadYamlConfig(path string, dest interface{}) error {
-	if !strings.HasSuffix(path, ".yaml") {
-		path = fmt.Sprintf("%s.yaml", path)
+	if !strings.HasSuffix(path, YamlExt) {
+		path = fmt.Sprintf("%s%s", path, YamlExt)
 	}
 	bytes, err := ioutil.ReadFile(path)
 	fmt.Println(string(bytes))
