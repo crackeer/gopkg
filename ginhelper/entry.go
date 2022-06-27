@@ -32,7 +32,7 @@ func SetResponse(ctx *gin.Context, code int64, data interface{}, message string)
 		response.Message = message
 		response.Data = data
 	} else {
-		ctx.Set(keyResponse, &JSONRespone{
+		ctx.Set(keyResponse, &JSONResponse{
 			Code:    code,
 			Message: message,
 			Data:    data,
@@ -42,11 +42,11 @@ func SetResponse(ctx *gin.Context, code int64, data interface{}, message string)
 
 // getJSONResponse
 //  @param ctx
-//  @return *JSONRespone
+//  @return *JSONResponse
 //  @return bool
-func getJSONResponse(ctx *gin.Context) (*JSONRespone, bool) {
+func getJSONResponse(ctx *gin.Context) (*JSONResponse, bool) {
 	if body, exists := ctx.Get(keyResponse); exists {
-		response, flag := body.(*JSONRespone)
+		response, flag := body.(*JSONResponse)
 		return response, flag
 	}
 	return nil, false
@@ -63,7 +63,7 @@ func ResponseJSON(ctx *gin.Context) {
 		ctx.PureJSON(http.StatusOK, response)
 		return
 	}
-	ctx.AbortWithStatusJSON(http.StatusOK, &JSONRespone{
+	ctx.AbortWithStatusJSON(http.StatusOK, &JSONResponse{
 		Code:    CodeDefaultError,
 		Message: MessageEmptyResponse,
 		Data:    nil,
