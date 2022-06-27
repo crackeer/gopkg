@@ -46,3 +46,17 @@ type YamlPage struct {
 	FrameFile   string `yaml:"frame_file"`
 	ContentFile string `yaml:"content_file"`
 }
+
+// DBConfig
+type DBConfig struct {
+	Driver        string `yaml:"driver"`
+	File          string `yaml:"file"`
+	Host          string `yaml:"host"`
+	Port          int64  `yaml:"port"`
+	WriteUsername string `yaml:"write_username"`
+	WritePassword string `yaml:"writer_password"`
+	ReadUsername  string `yaml:"read_username"`
+	ReadPassword  string `yaml:"read_password"`
+	Database      string `yaml:"database"`
+	Charset       string `yaml:"charset"`
+}
