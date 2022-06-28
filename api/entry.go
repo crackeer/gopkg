@@ -8,19 +8,22 @@ import (
 	"github.com/crackeer/gopkg/util"
 )
 
+const rootKey = "_root"
+const headerKey = "_header"
+
 // RequestClient
 type RequestClient struct {
 	factory APIMetaGetter
 	logger  Logger
 }
 
-// RequestItem
+// RequestItem ...
 type RequestItem struct {
-	APIID  string                 `json:"api_id"`
-	Params map[string]interface{} `json:"params"`
-	Header map[string]string      `json:"header"`
-	As     string                 `json:"as"`
-	Key    bool                   `json:"key"`
+	APIID  string                 `yaml:"api_id"`
+	Params map[string]interface{} `yaml:"params"`
+	Header map[string]string      `yaml:"header"`
+	As     string                 `yaml:"as"`
+	Key    bool                   `yaml:"key"`
 }
 
 // NewRequestClient
@@ -54,7 +57,7 @@ func (client *RequestClient) Request(apiID string, query map[string]interface{},
 //  @param list
 //  @return map[string]*APIResponse
 //  @return error
-func (client *RequestClient) RequestList(list []*RequestItem, env string) (map[string]*APIResponse, map[string]string, error) {
+func (client *RequestClient) requestList(list []*RequestItem, env string) (map[string]*APIResponse, map[string]string, error) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(list))
@@ -100,8 +103,8 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 	)
 
 	input := map[string]interface{}{
-		"root":   query,
-		"header": header,
+		rootKey:   query,
+		headerKey: header,
 	}
 
 	for _, items := range list {
@@ -110,7 +113,7 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 			retError = err
 			break
 		}
-		mapAPIResponse, mapError, err := client.RequestList(newItems, env)
+		mapAPIResponse, mapError, err := client.requestList(newItems, env)
 		if err != nil {
 			retError = err
 			break
@@ -139,17 +142,26 @@ func transfer(list []*RequestItem, input map[string]interface{}) ([]*RequestItem
 
 	var err error
 	for i, item := range list {
-		if list[i].Params, err = mapbuilder.Build(src, item.Params); err != nil && item.Key {
-			return list, fmt.Errorf("build `%s` params error: %s", item.As, err.Error())
+		if len(item.Params) > 0 {
+			if list[i].Params, err = mapbuilder.Build(src, item.Params); err != nil && item.Key {
+				return list, fmt.Errorf("build `%s` params error: %s", item.As, err.Error())
+			}
+		} else {
+			list[i].Params = util.LoadMap(input).GetMap(rootKey)
 		}
 
-		header := util.Convert2Map(item.Header)
+		if len(item.Params) > 0 {
+			header := util.Convert2Map(item.Header)
 
-		newHeader, err := mapbuilder.Build(src, header)
-		if err != nil && item.Key {
-			return list, fmt.Errorf("build `%s` header error: %s", item.As, err.Error())
+			newHeader, err := mapbuilder.Build(src, header)
+			if err != nil && item.Key {
+				return list, fmt.Errorf("build `%s` header error: %s", item.As, err.Error())
+			}
+			list[i].Header = util.Map2MapString(newHeader)
+		} else {
+			header := util.LoadMap(input).GetMap(headerKey)
+			list[i].Header = util.Map2MapString(header)
 		}
-		list[i].Header = util.Map2MapString(newHeader)
 	}
 	return list, nil
 }
