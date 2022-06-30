@@ -43,6 +43,7 @@ func RenderHTML(framePath string, contentPath string, opt *Option) (string, erro
 		return "", errors.New("frame file not exists")
 	}
 	fulltext := strings.Replace(string(bytes), opt.PlaceholderContent, content, -1)
+	fulltext = strings.Replace(fulltext, opt.PlaceholderTitle, opt.Title, -1)
 
 	return strings.Replace(fulltext, opt.PlaceholderJSData, injectData, -1), nil
 
