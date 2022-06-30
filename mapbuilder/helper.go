@@ -45,6 +45,10 @@ func GjsonGet(input []byte, pattern string) interface{} {
 		return []interface{}{}
 	}
 
+	if pattern == _defaultNil {
+		return nil
+	}
+
 	pattern1 := pattern[1:]
 
 	gr := gjson.GetBytes(input, pattern1)
