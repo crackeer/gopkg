@@ -1,4 +1,4 @@
-package ginhelper
+package gin
 
 import (
 	"bytes"
