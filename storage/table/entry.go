@@ -1,35 +1,25 @@
 package table
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/crackeer/gopkg/storage"
 	"github.com/crackeer/gopkg/util"
 	"gorm.io/gorm"
 )
 
-// Table
+const (
+	_defaultPrimaryKey = "id"
+)
+
+// Table ...
 type Table struct {
-	Name    string
-	DB      *gorm.DB
-	OrderBy string
-	Driver  string
-
+	Name       string
+	DB         *gorm.DB
+	Driver     string
 	primaryKey string
-}
-
-// NewTable
-//  @param name
-//  @param db
-//  @return *Table
-func NewTable(db *gorm.DB, name string) (*Table, error) {
-	if db == nil {
-		return nil, errors.New("db nil")
-	}
-	return &Table{
-		Name: name,
-		DB:   db,
-	}, nil
+	PageSize   int64
+	OrderBy    string
 }
 
 // SetPrimaryKey ...
@@ -53,6 +43,15 @@ func (table *Table) GetPrimaryKey() string {
 	if len(table.primaryKey) > 0 {
 		return table.primaryKey
 	}
+
+	if table.Driver == storage.DriverSQLite {
+		return table.getSQLitePrimaryKey()
+	}
+
+	return "id"
+}
+
+func (table *Table) getSQLitePrimaryKey() string {
 	list := []map[string]interface{}{}
 	sql := fmt.Sprintf("pragma table_info('%s')", table.Name)
 	table.DB.Raw(sql).Scan(&list)
@@ -62,8 +61,7 @@ func (table *Table) GetPrimaryKey() string {
 			return mapLoader.GetString("name", "")
 		}
 	}
-
-	return "id"
+	return _defaultPrimaryKey
 }
 
 // Create
@@ -84,7 +82,24 @@ func (table *Table) Update(where map[string]interface{}, data map[string]interfa
 	return table.DB.Table(table.Name).Where(where).Updates(data).RowsAffected
 }
 
-// Query
+// Get ...
+//  @receiver table
+//  @param query
+//  @param limit
+//  @return map[string]interface{}
+//  @return error
+func (table *Table) Get(query map[string]interface{}) (map[string]interface{}, error) {
+	retData := map[string]interface{}{}
+
+	db := table.DB.Table(table.Name).Where(query)
+	if len(table.OrderBy) > 0 {
+		db = db.Order(table.OrderBy)
+	}
+	err := db.Find(&retData).Error
+	return retData, err
+}
+
+// Query ...
 //  @receiver table
 //  @param query
 //  @return []map
@@ -94,7 +109,7 @@ func (table *Table) Query(query map[string]interface{}, limit int) []map[string]
 	return list
 }
 
-// GetPageList
+// GetPageList ...
 //  @receiver table
 //  @param query
 //  @param page
