@@ -29,14 +29,14 @@ func (table *Table) SetPrimaryKey(key string) {
 	table.primaryKey = key
 }
 
-// SetDriver
+// SetDriver ...
 //  @receiver table
 //  @param key
 func (table *Table) SetDriver(key string) {
 	table.Driver = key
 }
 
-// GetPrimaryKey
+// GetPrimaryKey ...
 //  @receiver table
 //  @return string
 func (table *Table) GetPrimaryKey() string {
@@ -64,7 +64,7 @@ func (table *Table) getSQLitePrimaryKey() string {
 	return _defaultPrimaryKey
 }
 
-// Create
+// Create ...
 //  @receiver table
 //  @param data
 //  @return map
@@ -73,7 +73,7 @@ func (table *Table) Create(data map[string]interface{}) (map[string]interface{},
 	return data, err
 }
 
-// Update
+// Update ...
 //  @receiver table
 //  @param id
 //  @param data
@@ -122,7 +122,7 @@ func (table *Table) GetPageList(query map[string]interface{}, page, pageSize int
 	return list
 }
 
-// Count
+// Count ...
 //  @receiver table
 //  @param query
 //  @return int64
@@ -132,7 +132,7 @@ func (table *Table) Count(query map[string]interface{}) int64 {
 	return count
 }
 
-// Delete
+// Delete ...
 //  @receiver table
 //  @param primaryKey
 //  @param value
@@ -142,7 +142,7 @@ func (table *Table) Delete(primaryKey string, value interface{}) int64 {
 	return table.DB.Exec(sql, value).RowsAffected
 }
 
-// Distinct
+// Distinct ...
 //  @receiver table
 //  @param field
 //  @param where
