@@ -1,4 +1,4 @@
-package ginhelper
+package gin
 
 // JSONResspone
 type JSONResponse struct {

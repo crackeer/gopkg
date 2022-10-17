@@ -18,4 +18,5 @@ const (
 	_defaultMap    = "@map"
 	_defaultString = "@string"
 	_defaultArray  = "@array"
+	_defaultNil    = "@nil"
 )

@@ -1,4 +1,4 @@
-package ginhelper
+package gin
 
 import (
 	"bytes"
@@ -114,4 +114,25 @@ func AllParams(ctx *gin.Context) map[string]interface{} {
 		}
 	}
 	return retData
+}
+
+// SaveUploadedFile 
+//  @param ctx 
+//  @param formName 
+//  @param localFile 
+//  @return error 
+func SaveUploadedFile(ctx *gin.Context, formName string, localFile string) error {
+	if len(formName) < 1 {
+		formName = "file"
+	}
+	fileInfo, err := ctx.FormFile(formName)
+	if err != nil {
+		return err
+	}
+
+	err = ctx.SaveUploadedFile(fileInfo, localFile)
+	if err != nil {
+		return err
+	}
+	return nil
 }
