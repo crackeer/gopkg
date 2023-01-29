@@ -10,7 +10,6 @@ package util
 import (
 	"archive/tar"
 	"compress/gzip"
-	"encoding/csv"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -101,9 +100,10 @@ func createFile(name string) (*os.File, error) {
 }
 
 // Compress ...
-//  @param fileName
-//  @param dest
-//  @return error
+//
+//	@param fileName
+//	@param dest
+//	@return error
 func Compress(fileName string, dest string) error {
 
 	file, err := os.Open(fileName)
@@ -169,8 +169,9 @@ func compress(file *os.File, prefix string, tw *tar.Writer) error {
 }
 
 // GetFiles
-//  @param folder
-//  @return []string
+//
+//	@param folder
+//	@return []string
 func GetFiles(folder string) []string {
 	files, _ := ioutil.ReadDir(folder)
 	retData := []string{}
@@ -183,28 +184,4 @@ func GetFiles(folder string) []string {
 		}
 	}
 	return retData
-}
-
-// ReadCsv
-//  @param fileName
-//  @return []
-func ReadCsv(fileName string) [][]string {
-
-	list := [][]string{}
-	file, err := os.Open(fileName)
-	if err != nil {
-		panic(err)
-	}
-	defer file.Close()
-	reader := csv.NewReader(file)
-	for {
-		record, err := reader.Read()
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			fmt.Println("Error:", err)
-		}
-		list = append(list, record)
-	}
-	return list
 }

@@ -1,7 +1,5 @@
 package config
 
-import "github.com/crackeer/gopkg/api"
-
 const (
 
 	// EnvDefault
@@ -38,8 +36,8 @@ type YamlGroupPage struct {
 
 // YamlAPIConfig
 type YamlPage struct {
-	DataAPI       string                 `yaml:"data_api"`
-	DataAPIMesh   [][]*api.RequestItem   `yaml:"data_api_mesh"`
+	DataAPI string `yaml:"data_api"`
+	//DataAPIMesh   [][]*api.RequestItem   `yaml:"data_api_mesh"`
 	Type          string                 `yaml:"type"`
 	Extension     map[string]interface{} `yaml:"extension"`
 	DefaultParams map[string]interface{} `yaml:"default_params"`

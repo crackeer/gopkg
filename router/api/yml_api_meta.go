@@ -1,4 +1,4 @@
-package getter
+package api
 
 import (
 	"errors"
@@ -6,7 +6,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/crackeer/gopkg/api"
 	"github.com/crackeer/gopkg/config"
 )
 
@@ -17,8 +16,9 @@ type YamlAPIMetaGetter struct {
 }
 
 // NewYamlAPIMetaGetter
-//  @param prefix
-//  @return *YamlAPIMetaGetter
+//
+//	@param prefix
+//	@return *YamlAPIMetaGetter
 func NewYamlAPIMetaGetter(prefix string) *YamlAPIMetaGetter {
 	return &YamlAPIMetaGetter{
 		ConfigPrefix: prefix,
@@ -27,17 +27,18 @@ func NewYamlAPIMetaGetter(prefix string) *YamlAPIMetaGetter {
 }
 
 // GetAPIMeta
-//  @receiver apiMetaGetter
-//  @param name
-//  @param env
-//  @return *api.APIMeta
-//  @return error
-func (apiMetaGetter *YamlAPIMetaGetter) GetAPIMeta(name string, env string) (*api.APIMeta, error) {
+//
+//	@receiver apiMetaGetter
+//	@param name
+//	@param env
+//	@return *api.APIMeta
+//	@return error
+func (apiMetaGetter *YamlAPIMetaGetter) GetAPIMeta(name string, env string) (*APIMeta, error) {
 
 	key := name + "@" + env
 	fmt.Println(key)
 	if value, ok := apiMetaGetter.container.Load(key); ok {
-		if apiMeta, ok := value.(*api.APIMeta); ok {
+		if apiMeta, ok := value.(*APIMeta); ok {
 			return apiMeta, nil
 		}
 	}
@@ -53,7 +54,7 @@ func (apiMetaGetter *YamlAPIMetaGetter) GetAPIMeta(name string, env string) (*ap
 	return apiMeta, nil
 }
 
-func (apiMetaGetter *YamlAPIMetaGetter) loadAPIMeta(name string, env string) (*api.APIMeta, error) {
+func (apiMetaGetter *YamlAPIMetaGetter) loadAPIMeta(name string, env string) (*APIMeta, error) {
 
 	parts := strings.Split(name, "/")
 	fmt.Println(parts)
@@ -81,7 +82,7 @@ func (apiMetaGetter *YamlAPIMetaGetter) loadAPIMeta(name string, env string) (*a
 		return nil, fmt.Errorf("api `%s` not exists", apiName)
 	}
 
-	retData := &api.APIMeta{
+	retData := &APIMeta{
 		SuccessCode: apiConfig.SuccessCode,
 		CodeKey:     apiConfig.CodeKey,
 		DataKey:     apiConfig.DataKey,
