@@ -31,8 +31,8 @@ type APIRequest struct {
 	Logger
 }
 
-// APIMetaGetter
-type APIMetaGetter interface {
+// APIMetaFactory ...
+type APIMetaFactory interface {
 	GetAPIMeta(string, string) (*APIMeta, error)
 }
 

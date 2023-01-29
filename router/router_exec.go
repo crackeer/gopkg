@@ -1,10 +1,14 @@
 package router
 
+import "github.com/crackeer/gopkg/router/api"
+
 // RouterExecuter
 type RouterExecuter struct {
-	*RouterMeta
-	Env         string
-	Header      map[string]string
+	env        string
+	header     map[string]string
+	input      map[string]interface{}
+	apiFactory api.APIMetaFactory
+
 	ErrorCode   int64
 	ResponseRaw string
 	Error       string
@@ -15,32 +19,61 @@ type RouterExecuter struct {
 //	@param meta
 //	@param header
 //	@return *RouterExecuter
-func NewRouterExecuter(meta *RouterMeta, env string, header map[string]string) *RouterExecuter {
+func NewRouterExecuter(apiFactory api.APIMetaFactory) *RouterExecuter {
 	return &RouterExecuter{
-		Env:        env,
-		RouterMeta: meta,
-		Header:     header,
+		apiFactory: apiFactory,
 	}
 }
 
-func (e *RouterExecuter) Exec(params map[string]interface{}) (map[string]interface{}, error) {
-	if e.Mode == ModeRelay {
-		return e.doRelay(params)
-	}
-	if e.Mode == ModeMesh {
-		return e.doMesh(params)
-	}
-	return e.doStatic(params)
+// UseEnv
+//
+//	@receiver e
+//	@param env
+//	@return *RouterExecuter
+func (e *RouterExecuter) UseEnv(env string) *RouterExecuter {
+	e.env = env
+	return e
 }
 
-func (meta *RouterExecuter) doRelay(params map[string]interface{}) (map[string]interface{}, error) {
+// UseHeader //
+//
+//	@receiver e
+//	@param env
+//	@return *RouterExecuter
+func (e *RouterExecuter) UseHeader(header map[string]string) *RouterExecuter {
+	e.header = header
+	return e
+}
+
+// UseInput
+//
+//	@receiver e
+//	@param env
+//	@return *RouterExecuter
+func (e *RouterExecuter) UseInput(input map[string]interface{}) *RouterExecuter {
+	e.input = input
+	return e
+}
+
+func (e *RouterExecuter) Exec(routerMeta *RouterMeta) (map[string]interface{}, error) {
+	if routerMeta.Mode == ModeRelay {
+		return e.doRelay(routerMeta)
+	}
+	if routerMeta.Mode == ModeMesh {
+		return e.doMesh(routerMeta)
+	}
+	return e.doStatic(routerMeta)
+}
+
+func (meta *RouterExecuter) doRelay(routerMeta *RouterMeta) (map[string]interface{}, error) {
+	meta.apiFactory.GetAPIMeta(routerMeta.Config, meta.env)
 	return nil, nil
 }
 
-func (meta *RouterExecuter) doMesh(params map[string]interface{}) (map[string]interface{}, error) {
+func (meta *RouterExecuter) doMesh(routerMeta *RouterMeta) (map[string]interface{}, error) {
 	return nil, nil
 }
 
-func (meta *RouterExecuter) doStatic(params map[string]interface{}) (map[string]interface{}, error) {
+func (meta *RouterExecuter) doStatic(routerMeta *RouterMeta) (map[string]interface{}, error) {
 	return nil, nil
 }

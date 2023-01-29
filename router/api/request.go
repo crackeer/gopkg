@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"fmt"
 	"sync"
 
@@ -14,37 +13,15 @@ const headerKey = "_header"
 
 // RequestClient ...
 type RequestClient struct {
-	factory APIMetaGetter
+	factory APIMetaFactory
 	logger  Logger
-}
-
-// RequestItem ...
-type RequestItem struct {
-	API    string                 `yaml:"api"`
-	Params map[string]interface{} `yaml:"params"`
-	Header map[string]string      `yaml:"header"`
-	As     string                 `yaml:"as"`
-	Key    bool                   `yaml:"key"`
-}
-
-// ParseMeshConfig
-//
-//	@param raw
-//	@return [][]*RequestItem
-//	@return error
-func ParseMeshConfig(raw string) ([][]*RequestItem, error) {
-	retData := [][]*RequestItem{}
-	if err := json.Unmarshal([]byte(raw), &retData); err != nil {
-		return nil, err
-	}
-	return retData, nil
 }
 
 // NewRequestClient
 //
 //	@param getter
 //	@return *RequestClient
-func NewRequestClient(getter APIMetaGetter) *RequestClient {
+func NewRequestClient(getter APIMetaFactory) *RequestClient {
 	return &RequestClient{
 		factory: getter,
 	}
