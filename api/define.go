@@ -2,17 +2,18 @@ package api
 
 // APIMeta API
 type APIMeta struct {
-	BaseURI     string
-	Path        string
-	ContentType string
-	Method      string
-	SuccessCode string
-	MessageKey  string
-	CodeKey     string
-	DataKey     string
-	Timeout     int64
-	SignAlg     string
-	Header      map[string]string
+	BaseURI     string            `json:"base_uri"`
+	Path        string            `json:"path"`
+	ContentType string            `json:"content_type"`
+	Method      string            `json:"method"`
+	SuccessCode string            `json:"success_code"`
+	MessageKey  string            `json:"message_key"`
+	CodeKey     string            `json:"code_key"`
+	DataKey     string            `json:"data_key"`
+	Timeout     int64             `json:"timeout"`
+	SignAlg     string            `json:"signature"`
+	Header      map[string]string `json:"header"`
+	CacheTime   int64             `json:"cache_time"`
 }
 
 // APIResponse

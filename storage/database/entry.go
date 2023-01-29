@@ -5,8 +5,9 @@ import (
 )
 
 // GetSQLiteTables
-//  @param db
-//  @return []map
+//
+//	@param db
+//	@return []map
 func GetSQLiteTables(db *gorm.DB) []map[string]interface{} {
 	list := []map[string]interface{}{}
 	db.Table("sqlite_master").Where(map[string]interface{}{
@@ -16,8 +17,9 @@ func GetSQLiteTables(db *gorm.DB) []map[string]interface{} {
 }
 
 // ExecSQL
-//  @param db
-//  @return []map
+//
+//	@param db
+//	@return []map
 func ExecSQL(db *gorm.DB, sql string) error {
 	return db.Exec(sql).Error
 }
