@@ -14,6 +14,7 @@ const headerKey = "_header"
 // RequestClient ...
 type RequestClient struct {
 	factory APIMetaFactory
+	env     string
 	logger  Logger
 }
 
@@ -27,6 +28,10 @@ func NewRequestClient(getter APIMetaFactory) *RequestClient {
 	}
 }
 
+func (client *RequestClient) UseEnv(env string) {
+	client.env = env
+}
+
 // Request
 //
 //	@receiver client
@@ -35,8 +40,8 @@ func NewRequestClient(getter APIMetaFactory) *RequestClient {
 //	@param header
 //	@return *APIResponse
 //	@return error
-func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string, env string) (*APIResponse, error) {
-	apiMeta, err := client.factory.GetAPIMeta(apiID, env)
+func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string) (*APIResponse, error) {
+	apiMeta, err := client.factory.GetAPIMeta(apiID, client.env)
 	if err != nil {
 		return nil, fmt.Errorf("get api meta error: %s", err.Error())
 	}
@@ -51,7 +56,7 @@ func (client *RequestClient) Request(apiID string, query map[string]interface{},
 //	@param list
 //	@return map[string]*APIResponse
 //	@return error
-func (client *RequestClient) requestList(list []*RequestItem, env string) (map[string]*APIResponse, map[string]string, error) {
+func (client *RequestClient) requestList(list []*RequestItem) (map[string]*APIResponse, map[string]string, error) {
 
 	wg := &sync.WaitGroup{}
 	wg.Add(len(list))
@@ -64,7 +69,7 @@ func (client *RequestClient) requestList(list []*RequestItem, env string) (map[s
 
 	for _, item := range list {
 		go func(tmp *RequestItem) {
-			apiResponse, err := client.Request(tmp.API, tmp.Params, tmp.Header, env)
+			apiResponse, err := client.Request(tmp.API, tmp.Params, tmp.Header)
 			locker.Lock()
 			defer locker.Unlock()
 			if err != nil {
@@ -89,7 +94,7 @@ func (client *RequestClient) requestList(list []*RequestItem, env string) (map[s
 //	@param list
 //	@return map[string]*APIResponse
 //	@return error
-func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interface{}, header map[string]string, env string) (map[string]*APIResponse, map[string]string, error) {
+func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interface{}, header map[string]string) (map[string]*APIResponse, map[string]string, error) {
 
 	var (
 		retError error
@@ -108,7 +113,7 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 			retError = err
 			break
 		}
-		mapAPIResponse, mapError, err := client.requestList(newItems, env)
+		mapAPIResponse, mapError, err := client.requestList(newItems)
 		if err != nil {
 			retError = err
 			break

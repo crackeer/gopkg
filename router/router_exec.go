@@ -55,23 +55,34 @@ func (e *RouterExecuter) UseInput(input map[string]interface{}) *RouterExecuter 
 	return e
 }
 
-func (e *RouterExecuter) Exec(routerMeta *RouterMeta) (map[string]interface{}, error) {
+func (e *RouterExecuter) Exec(routerMeta *RouterMeta) (interface{}, error) {
 	if routerMeta.Mode == ModeRelay {
-		return e.doRelay(routerMeta)
+		_, err := e.doRelay(routerMeta)
+		if err != nil {
+			return nil, err
+		}
+		//apiResponse.Data
 	}
 	if routerMeta.Mode == ModeMesh {
-		return e.doMesh(routerMeta)
+		_, _, err := e.doMesh(routerMeta)
+		if err != nil {
+			return nil, err
+		}
 	}
 	return e.doStatic(routerMeta)
 }
 
-func (meta *RouterExecuter) doRelay(routerMeta *RouterMeta) (map[string]interface{}, error) {
-	meta.apiFactory.GetAPIMeta(routerMeta.Config, meta.env)
-	return nil, nil
+func (meta *RouterExecuter) doRelay(routerMeta *RouterMeta) (*api.APIResponse, error) {
+	client := api.NewRequestClient(meta.apiFactory)
+	client.UseEnv(meta.env)
+	return client.Request(routerMeta.Config, meta.input, meta.header)
 }
 
-func (meta *RouterExecuter) doMesh(routerMeta *RouterMeta) (map[string]interface{}, error) {
-	return nil, nil
+func (meta *RouterExecuter) doMesh(routerMeta *RouterMeta) (map[string]*api.APIResponse, map[string]string, error) {
+	client := api.NewRequestClient(meta.apiFactory)
+	client.UseEnv(meta.env)
+	list, _ := api.ParseMeshConfig(routerMeta.Config)
+	return client.Mesh(list, meta.input, meta.header)
 }
 
 func (meta *RouterExecuter) doStatic(routerMeta *RouterMeta) (map[string]interface{}, error) {
