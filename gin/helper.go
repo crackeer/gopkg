@@ -13,8 +13,9 @@ import (
 const defaultMultipartMemory = 32 << 20
 
 // AllGetParams ...
-//  @param ctx
-//  @return map
+//
+//	@param ctx
+//	@return map
 func AllGetParams(ctx *gin.Context) map[string]string {
 
 	if ctx == nil {
@@ -30,8 +31,9 @@ func AllGetParams(ctx *gin.Context) map[string]string {
 }
 
 // AllPostParams  ...
-//  @param ctx
-//  @return map
+//
+//	@param ctx
+//	@return map
 func AllPostParams(ctx *gin.Context) map[string]interface{} {
 
 	if ctx == nil {
@@ -70,8 +72,9 @@ func AllPostParams(ctx *gin.Context) map[string]interface{} {
 }
 
 // AllHeader
-//  @param ctx
-//  @return map
+//
+//	@param ctx
+//	@return map
 func AllHeader(ctx *gin.Context) map[string]string {
 	if ctx == nil {
 		return map[string]string{}
@@ -84,12 +87,13 @@ func AllHeader(ctx *gin.Context) map[string]string {
 	return retData
 }
 
-// Query
-//  @param ctx
-//  @param arge
-//  @return string
-func Query(ctx *gin.Context, arge ...string) string {
-	for _, k := range arge {
+// Query //
+//
+//	@param ctx
+//	@param args
+//	@return string
+func Query(ctx *gin.Context, args ...string) string {
+	for _, k := range args {
 		if val, e := ctx.GetQuery(k); e {
 			return val
 		}
@@ -97,9 +101,10 @@ func Query(ctx *gin.Context, arge ...string) string {
 	return ""
 }
 
-// AllParams
-//  @param ctx
-//  @return map
+// AllParams //
+//
+//	@param ctx
+//	@return map
 func AllParams(ctx *gin.Context) map[string]interface{} {
 
 	retData := map[string]interface{}{}
@@ -116,11 +121,12 @@ func AllParams(ctx *gin.Context) map[string]interface{} {
 	return retData
 }
 
-// SaveUploadedFile 
-//  @param ctx 
-//  @param formName 
-//  @param localFile 
-//  @return error 
+// SaveUploadedFile
+//
+//	@param ctx
+//	@param formName
+//	@param localFile
+//	@return error
 func SaveUploadedFile(ctx *gin.Context, formName string, localFile string) error {
 	if len(formName) < 1 {
 		formName = "file"

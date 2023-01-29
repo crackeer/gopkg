@@ -1,185 +1,185 @@
 package api
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
+	"sync"
 
+	"github.com/crackeer/gopkg/mapbuilder"
 	"github.com/crackeer/gopkg/util"
-	"github.com/gin-gonic/gin/binding"
-	"github.com/tidwall/gjson"
 )
 
-// NewAPIRequest
-//  @param apiMeta
-//  @param logger
-//  @return *APIRequest
-func NewAPIRequest(apiMeta *APIMeta, logger Logger) *APIRequest {
-	return &APIRequest{
-		APIMeta: apiMeta,
-		Logger:  logger,
+const rootKey = "_root"
+const headerKey = "_header"
+
+// RequestClient ...
+type RequestClient struct {
+	factory APIMetaGetter
+	logger  Logger
+}
+
+// RequestItem ...
+type RequestItem struct {
+	API    string                 `yaml:"api"`
+	Params map[string]interface{} `yaml:"params"`
+	Header map[string]string      `yaml:"header"`
+	As     string                 `yaml:"as"`
+	Key    bool                   `yaml:"key"`
+}
+
+// ParseMeshConfig
+//
+//	@param raw
+//	@return [][]*RequestItem
+//	@return error
+func ParseMeshConfig(raw string) ([][]*RequestItem, error) {
+	retData := [][]*RequestItem{}
+	if err := json.Unmarshal([]byte(raw), &retData); err != nil {
+		return nil, err
+	}
+	return retData, nil
+}
+
+// NewRequestClient
+//
+//	@param getter
+//	@return *RequestClient
+func NewRequestClient(getter APIMetaGetter) *RequestClient {
+	return &RequestClient{
+		factory: getter,
 	}
 }
 
-// AddHeader
-//  @receiver apiRequest
-//  @param header
-func (apiRequest *APIRequest) AddHeader(header map[string]string) {
-	if apiRequest.APIMeta.Header == nil {
-		apiRequest.APIMeta.Header = map[string]string{}
-	}
-	for key, value := range header {
-		apiRequest.APIMeta.Header[key] = value
+// Request
+//
+//	@receiver client
+//	@param name
+//	@param query
+//	@param header
+//	@return *APIResponse
+//	@return error
+func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string, env string) (*APIResponse, error) {
+	apiMeta, err := client.factory.GetAPIMeta(apiID, env)
+	if err != nil {
+		return nil, fmt.Errorf("get api meta error: %s", err.Error())
 	}
 
+	apiRequest := NewAPIRequest(apiMeta, client.logger)
+	return apiRequest.Do(query, header)
 }
 
-func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[string]string) (*APIResponse, error) {
-	apiRequest.AddHeader(header)
-	fullURL, contentType, requestBody := apiRequest.getPrimary(parameter)
-	apiRequest.AddHeader(map[string]string{
-		"Content-Type": contentType,
-	})
+// RequestList
+//
+//	@receiver client
+//	@param list
+//	@return map[string]*APIResponse
+//	@return error
+func (client *RequestClient) requestList(list []*RequestItem, env string) (map[string]*APIResponse, map[string]string, error) {
 
+	wg := &sync.WaitGroup{}
+	wg.Add(len(list))
+	locker := &sync.RWMutex{}
 	var (
-		request     *http.Request
-		response    *http.Response
-		retError    error
-		err         error
-		apiResponse = &APIResponse{}
+		retError error
+		errMap   map[string]string       = make(map[string]string)
+		retData  map[string]*APIResponse = make(map[string]*APIResponse)
 	)
 
-	for {
-
-		request, err = http.NewRequest(apiRequest.Method, fullURL, requestBody)
-
-		if err != nil {
-			retError = fmt.Errorf("new request error: %s", err.Error())
-			break
-		}
-
-		// Build header
-		for key, value := range apiRequest.Header {
-			request.Header.Set(key, value)
-		}
-
-		client := &http.Client{Timeout: time.Millisecond * time.Duration(apiRequest.Timeout)}
-		response, err = client.Do(request)
-
-		if err != nil {
-			retError = fmt.Errorf("request error: %s", err.Error())
-			break
-		}
-
-		var byteBody []byte
-
-		byteBody, err = ioutil.ReadAll(response.Body)
-
-		if err != nil {
-			retError = fmt.Errorf("read request body error: %s", err.Error())
-			break
-		}
-
-		// Build response
-		apiResponse.HttpStatusCode = int64(response.StatusCode)
-		apiResponse.OriginBody = byteBody
-
-		apiResponse.Code = gjson.GetBytes(byteBody, apiRequest.CodeKey).String()
-		apiResponse.Message = gjson.GetBytes(byteBody, apiRequest.MessageKey).String()
-
-		if response.StatusCode == http.StatusOK && len(apiRequest.DataKey) < 1 {
-			apiResponse.Data = string(byteBody)
-			break
-		}
-
-		apiResponse.Data = gjson.GetBytes(byteBody, apiRequest.DataKey).String()
-
-		if response.StatusCode != http.StatusOK {
-			retError = fmt.Errorf("http_error %d, %s", response.StatusCode, apiResponse.Message)
-			break
-		}
-
-		if len(apiRequest.SuccessCode) > 0 {
-			if apiResponse.Code != apiRequest.SuccessCode {
-				retError = fmt.Errorf("response error: %s", apiResponse.Message)
-				break
-			}
-		}
-		break
-	}
-
-	return apiResponse, retError
-}
-
-func (apiRequest *APIRequest) getPrimary(parameter map[string]interface{}) (string, string, io.Reader) {
-	fullURL := fmt.Sprintf("%s/%s", apiRequest.BaseURI, apiRequest.Path)
-	contentType := apiRequest.getContentType()
-
-	var body io.Reader
-
-	urlParameter := &url.Values{}
-	for key, value := range parameter {
-		strVal := util.ToString(value)
-		urlParameter.Set(key, strVal)
-	}
-	if apiRequest.Method == http.MethodGet {
-		fullURL = fmt.Sprintf("%s?%s", fullURL, urlParameter.Encode())
-	}
-
-	if contentType == "application/json" {
-		byteData, _ := util.Marshal(parameter)
-		body = strings.NewReader(string(byteData))
-	} else if contentType == "application/json" {
-		body = strings.NewReader(urlParameter.Encode())
-	} else if contentType == binding.MIMEMultipartPOSTForm {
-		body, contentType = packMultipart(parameter)
-	}
-
-	return fullURL, contentType, body
-}
-
-func packMultipart(data map[string]interface{}) (*bytes.Buffer, string) {
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-	for k, v := range data {
-		if list, ok := v.([]string); ok {
-			for _, item := range list {
-				writer.WriteField(k, item)
-			}
-			continue
-		}
-
-		if fileList, ok := v.([]*multipart.FileHeader); ok {
-			for _, f := range fileList {
-				formFile, _ := writer.CreateFormFile(k, f.Filename)
-				if tmp, err := f.Open(); err == nil {
-					io.Copy(formFile, tmp)
+	for _, item := range list {
+		go func(tmp *RequestItem) {
+			apiResponse, err := client.Request(tmp.API, tmp.Params, tmp.Header, env)
+			locker.Lock()
+			defer locker.Unlock()
+			if err != nil {
+				errMap[tmp.As] = err.Error()
+				if tmp.Key {
+					retError = err
 				}
+			} else {
+				retData[tmp.As] = apiResponse
 			}
-			continue
-		}
+			wg.Done()
+
+		}(item)
 	}
-	err := writer.Close()
-	if err != nil {
-		return nil, ""
-	}
-	return payload, writer.FormDataContentType()
+	wg.Wait()
+	return retData, errMap, retError
 }
 
-func (apiRequest *APIRequest) getContentType() string {
-	if value, ok := apiRequest.Header["Content-Type"]; ok {
-		return value
+// RequestList
+//
+//	@receiver client
+//	@param list
+//	@return map[string]*APIResponse
+//	@return error
+func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interface{}, header map[string]string, env string) (map[string]*APIResponse, map[string]string, error) {
+
+	var (
+		retError error
+		errMap   map[string]string       = make(map[string]string)
+		retData  map[string]*APIResponse = make(map[string]*APIResponse)
+	)
+
+	input := map[string]interface{}{
+		rootKey:   query,
+		headerKey: header,
 	}
 
-	if len(apiRequest.ContentType) > 0 {
-		return apiRequest.ContentType
-	}
+	for _, items := range list {
+		newItems, err := transfer(items, input)
+		if err != nil {
+			retError = err
+			break
+		}
+		mapAPIResponse, mapError, err := client.requestList(newItems, env)
+		if err != nil {
+			retError = err
+			break
+		}
 
-	return ""
+		for key, response := range mapAPIResponse {
+			retData[key] = response
+			var realData interface{}
+			if err := util.Unmarshal(string(response.OriginBody), &realData); err == nil {
+				input[key] = realData
+			} else {
+				input[key] = string(response.OriginBody)
+			}
+		}
+
+		for key, message := range mapError {
+			errMap[key] = message
+		}
+
+	}
+	return retData, errMap, retError
+}
+
+func transfer(list []*RequestItem, input map[string]interface{}) ([]*RequestItem, error) {
+	src := util.ToString(input)
+
+	var err error
+	for i, item := range list {
+		if len(item.Params) > 0 {
+			if list[i].Params, err = mapbuilder.Build(src, item.Params); err != nil && item.Key {
+				return list, fmt.Errorf("build `%s` params error: %s", item.As, err.Error())
+			}
+		} else {
+			list[i].Params = util.LoadMap(input).GetMap(rootKey)
+		}
+
+		if len(item.Params) > 0 {
+			header := util.Convert2Map(item.Header)
+
+			newHeader, err := mapbuilder.Build(src, header)
+			if err != nil && item.Key {
+				return list, fmt.Errorf("build `%s` header error: %s", item.As, err.Error())
+			}
+			list[i].Header = util.Map2MapString(newHeader)
+		} else {
+			header := util.LoadMap(input).GetMap(headerKey)
+			list[i].Header = util.Map2MapString(header)
+		}
+	}
+	return list, nil
 }

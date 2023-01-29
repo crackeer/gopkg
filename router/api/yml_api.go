@@ -9,18 +9,18 @@ import (
 	"github.com/crackeer/gopkg/config"
 )
 
-// YamlAPIMetaGetter
-type YamlAPIMetaGetter struct {
+// YamlAPIMeta Getter
+type YamlAPIMeta struct {
 	ConfigPrefix string
 	container    *sync.Map
 }
 
-// NewYamlAPIMetaGetter
+// NewYamlAPIMeta
 //
 //	@param prefix
-//	@return *YamlAPIMetaGetter
-func NewYamlAPIMetaGetter(prefix string) *YamlAPIMetaGetter {
-	return &YamlAPIMetaGetter{
+//	@return *YamlAPIMeta
+func NewYamlAPIMeta(prefix string) *YamlAPIMeta {
+	return &YamlAPIMeta{
 		ConfigPrefix: prefix,
 		container:    new(sync.Map),
 	}
@@ -33,10 +33,9 @@ func NewYamlAPIMetaGetter(prefix string) *YamlAPIMetaGetter {
 //	@param env
 //	@return *api.APIMeta
 //	@return error
-func (apiMetaGetter *YamlAPIMetaGetter) GetAPIMeta(name string, env string) (*APIMeta, error) {
+func (apiMetaGetter *YamlAPIMeta) GetAPIMeta(name string, env string) (*APIMeta, error) {
 
 	key := name + "@" + env
-	fmt.Println(key)
 	if value, ok := apiMetaGetter.container.Load(key); ok {
 		if apiMeta, ok := value.(*APIMeta); ok {
 			return apiMeta, nil
@@ -54,17 +53,15 @@ func (apiMetaGetter *YamlAPIMetaGetter) GetAPIMeta(name string, env string) (*AP
 	return apiMeta, nil
 }
 
-func (apiMetaGetter *YamlAPIMetaGetter) loadAPIMeta(name string, env string) (*APIMeta, error) {
+func (apiMetaGetter *YamlAPIMeta) loadAPIMeta(name string, env string) (*APIMeta, error) {
 
 	parts := strings.Split(name, "/")
-	fmt.Println(parts)
 	if len(parts) < 2 {
 		return nil, errors.New("name error")
 	}
 	apiName := parts[1]
 	path := apiMetaGetter.ConfigPrefix + "/" + parts[0]
 	apiConfig, err := config.LoadYamlAPIConfig(path)
-	fmt.Println(apiConfig)
 	if err != nil {
 		return nil, fmt.Errorf("load api `%s` config error: %s", name, err.Error())
 	}
