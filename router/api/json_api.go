@@ -1,13 +1,19 @@
 package api
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/crackeer/gopkg/config"
+)
+
+const (
+	jsonExtension = ".json"
 )
 
 // JSONAPI
@@ -77,6 +83,23 @@ func (apiMetaGetter *JSONAPIMeta) GetAPIMeta(name string, env string) (*APIMeta,
 	apiMetaGetter.container.Store(key, apiMeta)
 
 	return apiMeta, nil
+}
+
+func (apiMetaGetter *JSONAPIMeta) LoadAllAPI() error {
+	return nil
+}
+
+func (apiMetaGetter *JSONAPIMeta) readFile(name string) (*JsonObject, error) {
+	path := filepath.Join(apiMetaGetter.Path, name)
+	bytes, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	retData := &JsonObject{}
+	if err := json.Unmarshal(bytes, retData); err != nil {
+		return nil, err
+	}
+	return retData, nil
 }
 
 func (apiMetaGetter *JSONAPIMeta) loadAPIMeta(name string, env string) (*APIMeta, error) {
