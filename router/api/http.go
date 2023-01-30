@@ -17,9 +17,10 @@ import (
 )
 
 // NewAPIRequest
-//  @param apiMeta
-//  @param logger
-//  @return *APIRequest
+//
+//	@param apiMeta
+//	@param logger
+//	@return *APIRequest
 func NewAPIRequest(apiMeta *APIMeta, logger Logger) *APIRequest {
 	return &APIRequest{
 		APIMeta: apiMeta,
@@ -28,8 +29,9 @@ func NewAPIRequest(apiMeta *APIMeta, logger Logger) *APIRequest {
 }
 
 // AddHeader
-//  @receiver apiRequest
-//  @param header
+//
+//	@receiver apiRequest
+//	@param header
 func (apiRequest *APIRequest) AddHeader(header map[string]string) {
 	if apiRequest.APIMeta.Header == nil {
 		apiRequest.APIMeta.Header = map[string]string{}
@@ -118,7 +120,7 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 }
 
 func (apiRequest *APIRequest) getPrimary(parameter map[string]interface{}) (string, string, io.Reader) {
-	fullURL := fmt.Sprintf("%s/%s", apiRequest.BaseURI, apiRequest.Path)
+	fullURL := fmt.Sprintf("%s/%s", apiRequest.Host, apiRequest.Path)
 	contentType := apiRequest.getContentType()
 
 	var body io.Reader

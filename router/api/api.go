@@ -2,7 +2,7 @@ package api
 
 // APIMeta API
 type APIMeta struct {
-	BaseURI     string            `json:"base_uri"`
+	Host        string            `json:"host"`
 	Path        string            `json:"path"`
 	ContentType string            `json:"content_type"`
 	Method      string            `json:"method"`
@@ -11,7 +11,7 @@ type APIMeta struct {
 	CodeKey     string            `json:"code_key"`
 	DataKey     string            `json:"data_key"`
 	Timeout     int64             `json:"timeout"`
-	SignAlg     string            `json:"signature"`
+	SignConfig  *SignConfig       `json:"sign_config"`
 	Header      map[string]string `json:"header"`
 	CacheTime   int64             `json:"cache_time"`
 }

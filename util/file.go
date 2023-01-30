@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -86,4 +87,19 @@ func createFile(name string) (*os.File, error) {
 		return nil, err
 	}
 	return os.Create(name)
+}
+
+// ReadSubFiles //
+//
+//	@param folder
+//	@return []string
+func ReadSubFiles(folder string) []string {
+	files, _ := ioutil.ReadDir(folder)
+	retData := []string{}
+	for _, file := range files {
+		if !file.IsDir() {
+			retData = append(retData, filepath.Join(folder, file.Name()))
+		}
+	}
+	return retData
 }

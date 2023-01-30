@@ -2,14 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 
-	"github.com/crackeer/gopkg/config"
+	"github.com/crackeer/gopkg/util"
 )
 
 const (
@@ -21,22 +19,24 @@ type JsonObject struct {
 	ServiceMap     map[string]JsonServiceItem `json:"service_map"`
 	SuccessCodeKey string                     `json:"success_code_key"`
 	MessageKey     string                     `json:"message_key"`
+	CodeKey        string                     `json:"code_key"`
 	SuccessCode    string                     `json:"success_code"`
 	DataKey        string                     `json:"data_key"`
-	Timeout        int64                      `json:"timeout"`
 	APIList        []JsonAPIItem              `json:"api_list"`
 }
 
 // JsonServiceItem
 type JsonServiceItem struct {
 	Host       string      `json:"host"`
+	Name       string      `json:"name"`
 	SignConfig *SignConfig `json:"sign_config"`
+	Timeout    int64       `json:"timeout"`
 }
 
 // JsonAPIItem
 type JsonAPIItem struct {
 	Name        string `json:"name"`
-	URI         string `json:"uri"`
+	Path        string `json:"path"`
 	Method      string `json:"method"`
 	ContentType string `json:"content_type"`
 }
@@ -65,33 +65,55 @@ func NewJSONAPIMeta(prefix string) *JSONAPIMeta {
 //	@param env
 //	@return *api.APIMeta
 //	@return error
-func (apiMetaGetter *JSONAPIMeta) GetAPIMeta(name string, env string) (*APIMeta, error) {
+func (meta *JSONAPIMeta) GetAPIMeta(name string, env string) (*APIMeta, error) {
 
-	key := name + "@" + env
-	if value, ok := apiMetaGetter.container.Load(key); ok {
+	key := GetCacheKeyByAPI(name, env)
+	if value, ok := meta.container.Load(key); ok {
 		if apiMeta, ok := value.(*APIMeta); ok {
 			return apiMeta, nil
 		}
 	}
 
-	apiMeta, err := apiMetaGetter.loadAPIMeta(name, env)
-
-	if err != nil {
-		return nil, err
-	}
-
-	apiMetaGetter.container.Store(key, apiMeta)
-
-	return apiMeta, nil
+	return nil, nil
 }
 
-func (apiMetaGetter *JSONAPIMeta) LoadAllAPI() error {
+func (meta *JSONAPIMeta) LoadAllAPI() error {
+	files := util.ReadSubFiles(meta.Path)
+	for _, item := range files {
+		if !strings.HasSuffix(item, jsonExtension) {
+			continue
+		}
+		object, err := parseFile(item)
+		if err != nil {
+			return fmt.Errorf("parse file `%s` error: %s", item, err.Error())
+		}
+
+		for _, api := range object.APIList {
+			for env, service := range object.ServiceMap {
+				apiMeta := &APIMeta{
+					SuccessCode: object.SuccessCode,
+					CodeKey:     object.CodeKey,
+					DataKey:     object.DataKey,
+					MessageKey:  object.MessageKey,
+					Timeout:     service.Timeout,
+					Path:        api.Path,
+					Method:      api.Method,
+					ContentType: api.ContentType,
+				}
+				apiMeta.Host = service.Host
+				apiMeta.SignConfig = service.SignConfig
+				cacheKey := FormCacheKey(service.Name, api.Name, env)
+				meta.container.Store(cacheKey, apiMeta)
+			}
+
+		}
+
+	}
 	return nil
 }
 
-func (apiMetaGetter *JSONAPIMeta) readFile(name string) (*JsonObject, error) {
-	path := filepath.Join(apiMetaGetter.Path, name)
-	bytes, err := os.ReadFile(path)
+func parseFile(filePath string) (*JsonObject, error) {
+	bytes, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}
@@ -99,66 +121,5 @@ func (apiMetaGetter *JSONAPIMeta) readFile(name string) (*JsonObject, error) {
 	if err := json.Unmarshal(bytes, retData); err != nil {
 		return nil, err
 	}
-	return retData, nil
-}
-
-func (apiMetaGetter *JSONAPIMeta) loadAPIMeta(name string, env string) (*APIMeta, error) {
-
-	parts := strings.Split(name, "/")
-	if len(parts) < 2 {
-		return nil, errors.New("name error")
-	}
-	apiName := parts[1]
-	path := filepath.Join(apiMetaGetter.Path, parts[0]+".json")
-	apiConfig, err := config.LoadYamlAPIConfig(path)
-	if err != nil {
-		return nil, fmt.Errorf("load api `%s` config error: %s", name, err.Error())
-	}
-
-	if len(apiConfig.BaseURI) < 1 {
-		return nil, errors.New("get api error: base_uri list nil")
-	}
-
-	if len(apiConfig.API) < 1 {
-		return nil, errors.New("get api error: api list nil")
-	}
-
-	item, exists := apiConfig.API[apiName]
-	if !exists {
-		return nil, fmt.Errorf("api `%s` not exists", apiName)
-	}
-
-	retData := &APIMeta{
-		SuccessCode: apiConfig.SuccessCode,
-		CodeKey:     apiConfig.CodeKey,
-		DataKey:     apiConfig.DataKey,
-		MessageKey:  apiConfig.MessageKey,
-		Timeout:     apiConfig.Timeout,
-		Path:        item.Path,
-		Method:      item.Method,
-		ContentType: item.ContentType,
-		Header:      map[string]string{},
-	}
-
-	if baseURI, exists := apiConfig.BaseURI[config.EnvDefault]; exists {
-		retData.BaseURI = baseURI
-	}
-
-	if baseURI, exists := apiConfig.BaseURI[env]; exists {
-		retData.BaseURI = baseURI
-	}
-
-	if len(retData.BaseURI) < 1 {
-		return nil, errors.New("api base_uri nil")
-	}
-
-	for key, value := range apiConfig.Header {
-		retData.Header[key] = value
-	}
-
-	for key, value := range item.Header {
-		retData.Header[key] = value
-	}
-
 	return retData, nil
 }
