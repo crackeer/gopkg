@@ -24,4 +24,7 @@ const (
 
 	// MessageEmptyResponse
 	MessageEmptyResponse = "no router match or no data response"
+
+	// MessageNotFound
+	MessageNotFound = "router not found"
 )

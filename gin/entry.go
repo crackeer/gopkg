@@ -7,25 +7,28 @@ import (
 )
 
 // Success  ...
-//  @param ctx
-//  @param data
+//
+//	@param ctx
+//	@param data
 func Success(ctx *gin.Context, data interface{}) {
 	SetResponse(ctx, CodeSuccess, data, MessageSuccess)
 }
 
 // Failure ...
-//  @param ctx
-//  @param code
-//  @param message
+//
+//	@param ctx
+//	@param code
+//	@param message
 func Failure(ctx *gin.Context, code int64, message string) {
 	SetResponse(ctx, code, nil, message)
 }
 
 // SetResponse ...
-//  @param ctx
-//  @param code
-//  @param data
-//  @param message
+//
+//	@param ctx
+//	@param code
+//	@param data
+//	@param message
 func SetResponse(ctx *gin.Context, code int64, data interface{}, message string) {
 	if response, exists := getJSONResponse(ctx); exists {
 		response.Code = code
@@ -41,9 +44,10 @@ func SetResponse(ctx *gin.Context, code int64, data interface{}, message string)
 }
 
 // getJSONResponse
-//  @param ctx
-//  @return *JSONResponse
-//  @return bool
+//
+//	@param ctx
+//	@return *JSONResponse
+//	@return bool
 func getJSONResponse(ctx *gin.Context) (*JSONResponse, bool) {
 	if body, exists := ctx.Get(keyResponse); exists {
 		response, flag := body.(*JSONResponse)
@@ -53,7 +57,8 @@ func getJSONResponse(ctx *gin.Context) (*JSONResponse, bool) {
 }
 
 // ResponseJSON ...
-//  @param ctx N
+//
+//	@param ctx N
 func ResponseJSON(ctx *gin.Context) {
 	if ctx.IsAborted() {
 		return
@@ -66,6 +71,17 @@ func ResponseJSON(ctx *gin.Context) {
 	ctx.AbortWithStatusJSON(http.StatusOK, &JSONResponse{
 		Code:    CodeDefaultError,
 		Message: MessageEmptyResponse,
+		Data:    nil,
+	})
+}
+
+// ResponseNotFound
+//
+//	@param ctx
+func ResponseNotFound(ctx *gin.Context) {
+	ctx.AbortWithStatusJSON(http.StatusNotFound, &JSONResponse{
+		Code:    CodeDefaultError,
+		Message: MessageNotFound,
 		Data:    nil,
 	})
 }

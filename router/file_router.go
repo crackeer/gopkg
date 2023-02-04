@@ -1,15 +1,17 @@
 package router
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"sync"
+
+	"github.com/crackeer/gopkg/util"
 )
 
 // FileRouter
 type FileRouter struct {
-	BasePath string
+	BasePath  string
+	container *sync.Map
 }
 
 // NewFileRouter
@@ -26,7 +28,8 @@ func NewFileRouter(basePath string) (*FileRouter, error) {
 		return nil, fmt.Errorf("`%s` is not a directory", basePath)
 	}
 	return &FileRouter{
-		BasePath: basePath,
+		BasePath:  basePath,
+		container: new(sync.Map),
 	}, nil
 }
 
@@ -35,16 +38,23 @@ func NewFileRouter(basePath string) (*FileRouter, error) {
 //	@receiver f
 //	@param path
 //	@return *RouterMeta
-func (f *FileRouter) GetRouterMeta(path string) (*RouterMeta, error) {
-	fullPath := filepath.Join(f.BasePath, path)
-	bytes, err := os.ReadFile(fullPath)
-	if err != nil {
-		return nil, fmt.Errorf("read file `%s` error:%s", fullPath, err.Error())
-	}
-	retData := &RouterMeta{}
-	if err := json.Unmarshal(bytes, retData); err != nil {
-		return nil, fmt.Errorf("json unmarshal `%s` content error:%s", fullPath, err.Error())
+func (f *FileRouter) Get(uri string) *RouterMeta {
+	value, ok := f.container.Load(uri)
+	if !ok {
+		return nil
 	}
 
-	return retData, nil
+	return value.(*RouterMeta)
+}
+
+func (f *FileRouter) LoadAll() error {
+	files := util.GetDirFilesAsMap(f.BasePath)
+	for uri, file := range files {
+		meta, err := ParseRouterMetaByFile(file)
+		if err != nil {
+			return fmt.Errorf("parse file `%s` as router `%s` error:%s", file, uri, err.Error())
+		}
+		f.container.Store(uri, meta)
+	}
+	return nil
 }

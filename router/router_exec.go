@@ -1,17 +1,19 @@
 package router
 
-import "github.com/crackeer/gopkg/router/api"
+import (
+	"github.com/crackeer/gopkg/router/api"
+)
 
 // RouterExecuter
 type RouterExecuter struct {
 	env        string
 	header     map[string]string
 	input      map[string]interface{}
-	apiFactory api.APIMetaFactory
+	apiFactory api.APIFactory
 
-	ErrorCode   int64
-	ResponseRaw string
-	Error       string
+	Respone map[string]*api.APIResponse
+	Error   map[string]string
+	Data    map[string]interface{}
 }
 
 // NewRouterExecuter
@@ -19,9 +21,12 @@ type RouterExecuter struct {
 //	@param meta
 //	@param header
 //	@return *RouterExecuter
-func NewRouterExecuter(apiFactory api.APIMetaFactory) *RouterExecuter {
+func NewRouterExecuter(apiFactory api.APIFactory) *RouterExecuter {
 	return &RouterExecuter{
 		apiFactory: apiFactory,
+		Respone:    map[string]*api.APIResponse{},
+		Error:      map[string]string{},
+		Data:       map[string]interface{}{},
 	}
 }
 
@@ -55,36 +60,58 @@ func (e *RouterExecuter) UseInput(input map[string]interface{}) *RouterExecuter 
 	return e
 }
 
-func (e *RouterExecuter) Exec(routerMeta *RouterMeta) (interface{}, error) {
+func (executor *RouterExecuter) Exec(routerMeta *RouterMeta) error {
 	if routerMeta.Mode == ModeRelay {
-		_, err := e.doRelay(routerMeta)
-		if err != nil {
-			return nil, err
-		}
-		//apiResponse.Data
+		return executor.Relay(routerMeta)
 	}
+
 	if routerMeta.Mode == ModeMesh {
-		_, _, err := e.doMesh(routerMeta)
-		if err != nil {
-			return nil, err
-		}
+		return executor.Mesh(routerMeta)
 	}
-	return e.doStatic(routerMeta)
+
+	if routerMeta.Mode == ModeStatic {
+		return executor.Static(routerMeta)
+	}
+
+	return nil
 }
 
-func (meta *RouterExecuter) doRelay(routerMeta *RouterMeta) (*api.APIResponse, error) {
-	client := api.NewRequestClient(meta.apiFactory)
-	client.UseEnv(meta.env)
-	return client.Request(routerMeta.Config, meta.input, meta.header)
+func (executor *RouterExecuter) Relay(routerMeta *RouterMeta) error {
+	client := api.NewRequestClient(executor.apiFactory)
+	client.UseEnv(executor.env)
+	result, err := client.Request(routerMeta.RelayAPI, executor.input, executor.header)
+	executor.Respone[result.Name] = result
+	executor.Data[result.Name] = result.Data
+	if err != nil {
+		executor.Error[result.Name] = err.Error()
+	}
+	return err
 }
 
-func (meta *RouterExecuter) doMesh(routerMeta *RouterMeta) (map[string]*api.APIResponse, map[string]string, error) {
-	client := api.NewRequestClient(meta.apiFactory)
-	client.UseEnv(meta.env)
-	list, _ := api.ParseMeshConfig(routerMeta.Config)
-	return client.Mesh(list, meta.input, meta.header)
+func (executor *RouterExecuter) Mesh(routerMeta *RouterMeta) error {
+	client := api.NewRequestClient(executor.apiFactory)
+	client.UseEnv(executor.env)
+	result, errMap, err := client.Mesh(routerMeta.MeshConfig, executor.input, executor.header)
+	for key, value := range result {
+		executor.Respone[key] = value
+		executor.Data[key] = value.Data
+	}
+	for key, value := range errMap {
+		executor.Error[key] = value
+	}
+	return err
 }
 
-func (meta *RouterExecuter) doStatic(routerMeta *RouterMeta) (map[string]interface{}, error) {
-	return nil, nil
+// Static
+//
+//	@receiver executor
+//	@param routerMeta
+//	@return error
+func (executor *RouterExecuter) Static(routerMeta *RouterMeta) error {
+	executor.Data["static"] = map[string]interface{}{
+		"header": executor.header,
+		"input":  executor.input,
+		"env":    executor.env,
+	}
+	return nil
 }

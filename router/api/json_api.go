@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 
@@ -41,8 +42,8 @@ type JsonAPIItem struct {
 	ContentType string `json:"content_type"`
 }
 
-// JSONAPIMeta
-type JSONAPIMeta struct {
+// JSONAPI
+type JSONAPI struct {
 	Path      string
 	container *sync.Map
 }
@@ -51,11 +52,11 @@ type JSONAPIMeta struct {
 //
 //	@param prefix
 //	@return *YamlAPIMeta
-func NewJSONAPIMeta(prefix string) *JSONAPIMeta {
-	return &JSONAPIMeta{
+func NewJSONAPI(prefix string) (*JSONAPI, error) {
+	return &JSONAPI{
 		Path:      prefix,
 		container: new(sync.Map),
-	}
+	}, nil
 }
 
 // GetAPIMeta
@@ -65,24 +66,26 @@ func NewJSONAPIMeta(prefix string) *JSONAPIMeta {
 //	@param env
 //	@return *api.APIMeta
 //	@return error
-func (meta *JSONAPIMeta) GetAPIMeta(name string, env string) (*APIMeta, error) {
+func (meta *JSONAPI) Get(name string, env string) *APIMeta {
 
 	key := GetCacheKeyByAPI(name, env)
+	fmt.Println(key)
 	if value, ok := meta.container.Load(key); ok {
-		if apiMeta, ok := value.(*APIMeta); ok {
-			return apiMeta, nil
-		}
+		return value.(*APIMeta)
 	}
 
-	return nil, nil
+	key = GetCacheKeyByAPI(name, "default")
+	fmt.Println(key)
+	if value, ok := meta.container.Load(key); ok {
+		return value.(*APIMeta)
+	}
+
+	return nil
 }
 
-func (meta *JSONAPIMeta) LoadAllAPI() error {
-	files := util.ReadSubFiles(meta.Path)
-	for _, item := range files {
-		if !strings.HasSuffix(item, jsonExtension) {
-			continue
-		}
+func (meta *JSONAPI) LoadAll() error {
+	files := meta.loadFiles()
+	for name, item := range files {
 		object, err := parseFile(item)
 		if err != nil {
 			return fmt.Errorf("parse file `%s` error: %s", item, err.Error())
@@ -99,10 +102,12 @@ func (meta *JSONAPIMeta) LoadAllAPI() error {
 					Path:        api.Path,
 					Method:      api.Method,
 					ContentType: api.ContentType,
+					Name:        api.Name,
 				}
 				apiMeta.Host = service.Host
 				apiMeta.SignConfig = service.SignConfig
-				cacheKey := FormCacheKey(service.Name, api.Name, env)
+				cacheKey := FormCacheKey(name, api.Name, env)
+				fmt.Println(cacheKey, apiMeta)
 				meta.container.Store(cacheKey, apiMeta)
 			}
 
@@ -110,6 +115,19 @@ func (meta *JSONAPIMeta) LoadAllAPI() error {
 
 	}
 	return nil
+}
+func (meta *JSONAPI) loadFiles() map[string]string {
+	files := util.ReadSubFiles(meta.Path)
+	retData := map[string]string{}
+	for _, file := range files {
+		if !strings.HasSuffix(file, jsonExtension) {
+			continue
+		}
+		_, fileName := filepath.Split(file)
+		serviceName := strings.TrimSuffix(fileName, jsonExtension)
+		retData[serviceName] = file
+	}
+	return retData
 }
 
 func parseFile(filePath string) (*JsonObject, error) {

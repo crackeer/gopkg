@@ -11,8 +11,9 @@ import (
 var jsonX = jsoniter.ConfigCompatibleWithStandardLibrary
 
 // GetStructJsonTag ...
-//  @param i
-//  @return []string
+//
+//	@param i
+//	@return []string
 func GetStructJsonTag(i interface{}) []string {
 
 	iType := reflect.TypeOf(i)
@@ -28,8 +29,9 @@ func GetStructJsonTag(i interface{}) []string {
 }
 
 // StructToMapViaJson ...
-//  @param data
-//  @return map
+//
+//	@param data
+//	@return map
 func StructToMapViaJson(data interface{}) map[string]interface{} {
 	m := make(map[string]interface{})
 
@@ -41,9 +43,10 @@ func StructToMapViaJson(data interface{}) map[string]interface{} {
 }
 
 // Unmarshal JSON UnmarshalJSON a string of float64 safe
-//  @param input
-//  @param output
-//  @return error
+//
+//	@param input
+//	@param output
+//	@return error
 func Unmarshal(input string, output interface{}) error {
 	decoder := json.NewDecoder(bytes.NewReader([]byte(input)))
 	decoder.UseNumber()
@@ -52,33 +55,37 @@ func Unmarshal(input string, output interface{}) error {
 }
 
 // Marshal
-//  @param dest
-//  @return []byte
-//  @return error
+//
+//	@param dest
+//	@return []byte
+//	@return error
 func Marshal(dest interface{}) ([]byte, error) {
 	return json.Marshal(dest)
 }
 
 // Marshalx Marshal ...
-//  @param dest
-//  @return []byte
-//  @return error
+//
+//	@param dest
+//	@return []byte
+//	@return error
 func Marshalx(dest interface{}) ([]byte, error) {
 	return jsonX.Marshal(dest)
 }
 
 // Unmarshalx Unmarshal ...
-//  @param input
-//  @param data
-//  @return error
+//
+//	@param input
+//	@param data
+//	@return error
 func Unmarshalx(input []byte, data interface{}) error {
 	return jsonX.Unmarshal(input, &data)
 }
 
 // MarshalEscapeHtml ...
-//  @param data
-//  @return string
-//  @return error
+//
+//	@param data
+//	@return string
+//	@return error
 func MarshalEscapeHtml(data interface{}) (string, error) {
 	bf := bytes.NewBuffer([]byte{})
 	jsonEncoder := json.NewEncoder(bf)
@@ -87,4 +94,15 @@ func MarshalEscapeHtml(data interface{}) (string, error) {
 		return "", err
 	}
 	return bf.String(), nil
+}
+
+// JSONParse
+//
+//	@param raw
+//	@return interface{}
+//	@return error
+func JSONParse(raw string) (interface{}, error) {
+	var result interface{}
+	err := json.Unmarshal([]byte(raw), &result)
+	return result, err
 }

@@ -54,13 +54,14 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 		response    *http.Response
 		retError    error
 		err         error
-		apiResponse = &APIResponse{}
+		apiResponse = &APIResponse{
+			Name: apiRequest.APIMeta.Name,
+		}
 	)
 
 	for {
 
 		request, err = http.NewRequest(apiRequest.Method, fullURL, requestBody)
-
 		if err != nil {
 			retError = fmt.Errorf("new request error: %s", err.Error())
 			break
@@ -91,21 +92,18 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 		// Build response
 		apiResponse.HttpStatusCode = int64(response.StatusCode)
 		apiResponse.OriginBody = byteBody
-
+		if response.StatusCode != http.StatusOK {
+			retError = fmt.Errorf("http_error %d, body=%s", response.StatusCode, string(apiResponse.OriginBody))
+			break
+		}
 		apiResponse.Code = gjson.GetBytes(byteBody, apiRequest.CodeKey).String()
 		apiResponse.Message = gjson.GetBytes(byteBody, apiRequest.MessageKey).String()
-
-		if response.StatusCode == http.StatusOK && len(apiRequest.DataKey) < 1 {
+		if len(apiRequest.DataKey) < 1 {
 			apiResponse.Data = string(byteBody)
 			break
 		}
 
-		apiResponse.Data = gjson.GetBytes(byteBody, apiRequest.DataKey).String()
-
-		if response.StatusCode != http.StatusOK {
-			retError = fmt.Errorf("http_error %d, %s", response.StatusCode, apiResponse.Message)
-			break
-		}
+		apiResponse.Data = gjson.GetBytes(byteBody, apiRequest.DataKey).Value()
 
 		if len(apiRequest.SuccessCode) > 0 {
 			if apiResponse.Code != apiRequest.SuccessCode {

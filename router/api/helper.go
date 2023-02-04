@@ -9,7 +9,7 @@ import "fmt"
 //	@param env
 //	@return string
 func FormCacheKey(serviceName, apiName, env string) string {
-	return fmt.Sprint("%s/%s@%s", serviceName, apiName, env)
+	return fmt.Sprintf("%s/%s@%s", serviceName, apiName, env)
 }
 
 // GetCacheKeyByAPI
@@ -18,5 +18,5 @@ func FormCacheKey(serviceName, apiName, env string) string {
 //	@param env
 //	@return string
 func GetCacheKeyByAPI(api, env string) string {
-	return fmt.Sprint("%s@%s", api, env)
+	return fmt.Sprintf("%s@%s", api, env)
 }

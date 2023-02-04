@@ -1,5 +1,7 @@
 package router
 
+import "github.com/crackeer/gopkg/router/api"
+
 const (
 
 	// ModeRelay
@@ -14,12 +16,14 @@ const (
 
 // RouterMeta
 type RouterMeta struct {
-	Mode     string `json:"mode"`
-	Config   string `json:"config"`
-	Response string `json:"response"`
+	Mode       string                 `json:"mode"`
+	RelayAPI   string                 `json:"relay_api"`
+	MeshConfig [][]*api.RequestItem   `json:"config"`
+	Response   map[string]interface{} `json:"response"`
 }
 
 // RouterFactory
 type RouterFactory interface {
-	GetRouterMeta(string) (*RouterMeta, error)
+	Get(string) *RouterMeta
+	LoadAll() error
 }

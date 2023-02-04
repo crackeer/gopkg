@@ -2,6 +2,7 @@ package api
 
 // APIMeta API
 type APIMeta struct {
+	Name        string            `json:"name"`
 	Host        string            `json:"host"`
 	Path        string            `json:"path"`
 	ContentType string            `json:"content_type"`
@@ -18,9 +19,10 @@ type APIMeta struct {
 
 // APIResponse
 type APIResponse struct {
+	Name           string
 	Code           string
 	Message        string
-	Data           string
+	Data           interface{}
 	HttpStatusCode int64
 	OriginBody     []byte
 }
@@ -32,8 +34,9 @@ type APIRequest struct {
 }
 
 // APIMetaFactory ...
-type APIMetaFactory interface {
-	GetAPIMeta(string, string) (*APIMeta, error)
+type APIFactory interface {
+	Get(string, string) *APIMeta
+	LoadAll() error
 }
 
 type Logger interface {

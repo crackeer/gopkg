@@ -13,7 +13,7 @@ const headerKey = "_header"
 
 // RequestClient ...
 type RequestClient struct {
-	factory APIMetaFactory
+	factory APIFactory
 	env     string
 	logger  Logger
 }
@@ -22,7 +22,7 @@ type RequestClient struct {
 //
 //	@param getter
 //	@return *RequestClient
-func NewRequestClient(getter APIMetaFactory) *RequestClient {
+func NewRequestClient(getter APIFactory) *RequestClient {
 	return &RequestClient{
 		factory: getter,
 	}
@@ -41,9 +41,9 @@ func (client *RequestClient) UseEnv(env string) {
 //	@return *APIResponse
 //	@return error
 func (client *RequestClient) Request(apiID string, query map[string]interface{}, header map[string]string) (*APIResponse, error) {
-	apiMeta, err := client.factory.GetAPIMeta(apiID, client.env)
-	if err != nil {
-		return nil, fmt.Errorf("get api meta error: %s", err.Error())
+	apiMeta := client.factory.Get(apiID, client.env)
+	if apiMeta == nil {
+		return nil, fmt.Errorf("api `%s` not found", apiID)
 	}
 
 	apiRequest := NewAPIRequest(apiMeta, client.logger)
@@ -121,12 +121,7 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 
 		for key, response := range mapAPIResponse {
 			retData[key] = response
-			var realData interface{}
-			if err := util.Unmarshal(string(response.OriginBody), &realData); err == nil {
-				input[key] = realData
-			} else {
-				input[key] = string(response.OriginBody)
-			}
+			input[key] = response.Data
 		}
 
 		for key, message := range mapError {
