@@ -58,6 +58,11 @@ func (e *RouterExecuter) UseHeader(header map[string]string) *RouterExecuter {
 	return e
 }
 
+// SetMeshAPIConfig
+//
+//	@receiver e
+//	@param prefix
+//	@param seperator
 func (e *RouterExecuter) SetMeshAPIConfig(prefix, seperator string) {
 	e.meshAPIPrefix = prefix
 	e.meshAPISeperator = seperator
@@ -74,6 +79,11 @@ func (e *RouterExecuter) UseInput(input map[string]interface{}) *RouterExecuter 
 	return e
 }
 
+// Exec
+//
+//	@receiver executor
+//	@param routerMeta
+//	@return error
 func (executor *RouterExecuter) Exec(routerMeta *RouterMeta) error {
 	if routerMeta.Mode == ModeRelay {
 		return executor.Relay(routerMeta)
@@ -90,6 +100,11 @@ func (executor *RouterExecuter) Exec(routerMeta *RouterMeta) error {
 	return nil
 }
 
+// Relay
+//
+//	@receiver executor
+//	@param routerMeta
+//	@return error
 func (executor *RouterExecuter) Relay(routerMeta *RouterMeta) error {
 	client := api.NewRequestClient(executor.apiFactory)
 	client.UseEnv(executor.env)
@@ -102,6 +117,11 @@ func (executor *RouterExecuter) Relay(routerMeta *RouterMeta) error {
 	return err
 }
 
+// Mesh
+//
+//	@receiver executor
+//	@param routerMeta
+//	@return error
 func (executor *RouterExecuter) Mesh(routerMeta *RouterMeta) error {
 	client := api.NewRequestClient(executor.apiFactory)
 	client.UseEnv(executor.env)
@@ -130,6 +150,11 @@ func (executor *RouterExecuter) Static(routerMeta *RouterMeta) error {
 	return nil
 }
 
+// BuildResponse
+//
+//	@receiver executor
+//	@param routerMeta
+//	@return interface{}
 func (executor *RouterExecuter) BuildResponse(routerMeta *RouterMeta) interface{} {
 	if routerMeta.Response == nil {
 		if routerMeta.Mode == ModeRelay {
