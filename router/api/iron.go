@@ -4,11 +4,11 @@ import "encoding/json"
 
 // RequestItem ...
 type RequestItem struct {
-	API    string                 `yaml:"api"`
-	Params map[string]interface{} `yaml:"params"`
-	Header map[string]string      `yaml:"header"`
-	As     string                 `yaml:"as"`
-	Key    bool                   `yaml:"key"`
+	API       string                 `json:"api"`
+	Params    map[string]interface{} `json:"params"`
+	Header    map[string]string      `json:"header"`
+	As        string                 `json:"as"`
+	ErrorExit bool                   `json:"error_exit"`
 }
 
 // ParseMeshConfig

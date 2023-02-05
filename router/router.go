@@ -16,10 +16,10 @@ const (
 
 // RouterMeta
 type RouterMeta struct {
-	Mode       string                 `json:"mode"`
-	RelayAPI   string                 `json:"relay_api"`
-	MeshConfig [][]*api.RequestItem   `json:"config"`
-	Response   map[string]interface{} `json:"response"`
+	Mode       string               `json:"mode"`
+	RelayAPI   string               `json:"relay_api"`
+	MeshConfig [][]*api.RequestItem `json:"mesh_config"`
+	Response   interface{}          `json:"response"`
 }
 
 // RouterFactory

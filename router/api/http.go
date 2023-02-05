@@ -96,16 +96,22 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 			retError = fmt.Errorf("http_error %d, body=%s", response.StatusCode, string(apiResponse.OriginBody))
 			break
 		}
-		apiResponse.Code = gjson.GetBytes(byteBody, apiRequest.CodeKey).String()
-		apiResponse.Message = gjson.GetBytes(byteBody, apiRequest.MessageKey).String()
-		if len(apiRequest.DataKey) < 1 {
-			apiResponse.Data = string(byteBody)
-			break
+
+		if len(apiRequest.CodeKey) > 0 {
+			apiResponse.Code = gjson.GetBytes(byteBody, apiRequest.CodeKey).String()
 		}
 
-		apiResponse.Data = gjson.GetBytes(byteBody, apiRequest.DataKey).Value()
+		if len(apiRequest.MessageKey) > 0 {
+			apiResponse.Message = gjson.GetBytes(byteBody, apiRequest.MessageKey).String()
+		}
 
-		if len(apiRequest.SuccessCode) > 0 {
+		if len(apiRequest.DataKey) < 1 {
+			apiResponse.Data = util.TryJSONParse(string(byteBody))
+		} else {
+			apiResponse.Data = gjson.GetBytes(byteBody, apiRequest.DataKey).Value()
+		}
+
+		if len(apiRequest.SuccessCode) > 0 && len(apiResponse.Code) > 0 {
 			if apiResponse.Code != apiRequest.SuccessCode {
 				retError = fmt.Errorf("response error: %s", apiResponse.Message)
 				break

@@ -8,14 +8,23 @@ import (
 	"github.com/crackeer/gopkg/util"
 )
 
-const rootKey = "_root"
-const headerKey = "_header"
+const (
+
+	// InputKey ...
+	InputKey = "_input_"
+
+	// HeaderKey
+	HeaderKey = "_header_"
+)
 
 // RequestClient ...
 type RequestClient struct {
 	factory APIFactory
 	env     string
 	logger  Logger
+
+	meshAPISeperator string
+	meshAPIPrefix    string
 }
 
 // NewRequestClient
@@ -24,12 +33,19 @@ type RequestClient struct {
 //	@return *RequestClient
 func NewRequestClient(getter APIFactory) *RequestClient {
 	return &RequestClient{
-		factory: getter,
+		factory:          getter,
+		meshAPISeperator: mapbuilder.DefaultSeperator,
+		meshAPIPrefix:    mapbuilder.DefaultPrefix,
 	}
 }
 
 func (client *RequestClient) UseEnv(env string) {
 	client.env = env
+}
+
+func (client *RequestClient) SetMeshAPIConfig(prefix, seq string) {
+	client.meshAPISeperator = seq
+	client.meshAPIPrefix = prefix
 }
 
 // Request
@@ -74,8 +90,8 @@ func (client *RequestClient) requestList(list []*RequestItem) (map[string]*APIRe
 			defer locker.Unlock()
 			if err != nil {
 				errMap[tmp.As] = err.Error()
-				if tmp.Key {
-					retError = err
+				if tmp.ErrorExit {
+					retError = fmt.Errorf("request api `%s` response error:%s", tmp.As, err.Error())
 				}
 			} else {
 				retData[tmp.As] = apiResponse
@@ -103,12 +119,12 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 	)
 
 	input := map[string]interface{}{
-		rootKey:   query,
-		headerKey: header,
+		InputKey:  query,
+		HeaderKey: header,
 	}
 
 	for _, items := range list {
-		newItems, err := transfer(items, input)
+		newItems, err := transfer(items, input, client.meshAPIPrefix, client.meshAPISeperator)
 		if err != nil {
 			retError = err
 			break
@@ -132,29 +148,24 @@ func (client *RequestClient) Mesh(list [][]*RequestItem, query map[string]interf
 	return retData, errMap, retError
 }
 
-func transfer(list []*RequestItem, input map[string]interface{}) ([]*RequestItem, error) {
+func transfer(list []*RequestItem, input map[string]interface{}, prefix, seq string) ([]*RequestItem, error) {
 	src := util.ToString(input)
-
-	var err error
 	for i, item := range list {
+
 		if len(item.Params) > 0 {
-			if list[i].Params, err = mapbuilder.Build(src, item.Params); err != nil && item.Key {
-				return list, fmt.Errorf("build `%s` params error: %s", item.As, err.Error())
+			if value := mapbuilder.Build([]byte(src), item.Params, prefix, seq); value != nil {
+				list[i].Params = value.(map[string]interface{})
 			}
-		} else {
-			list[i].Params = util.LoadMap(input).GetMap(rootKey)
 		}
 
-		if len(item.Params) > 0 {
+		if len(item.Header) > 0 {
 			header := util.Convert2Map(item.Header)
-
-			newHeader, err := mapbuilder.Build(src, header)
-			if err != nil && item.Key {
-				return list, fmt.Errorf("build `%s` header error: %s", item.As, err.Error())
+			if newHeader := mapbuilder.Build([]byte(src), header, prefix, seq); newHeader != nil {
+				list[i].Header = util.Map2MapString(newHeader.(map[string]interface{}))
 			}
-			list[i].Header = util.Map2MapString(newHeader)
+
 		} else {
-			header := util.LoadMap(input).GetMap(headerKey)
+			header := util.LoadMap(input).GetMap(HeaderKey)
 			list[i].Header = util.Map2MapString(header)
 		}
 	}

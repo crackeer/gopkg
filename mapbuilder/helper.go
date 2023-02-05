@@ -8,13 +8,14 @@ import (
 )
 
 // MutiGjsonGet
-//  @param input
-//  @param patterns
-//  @return interface{}
-func MutiGjsonGet(input []byte, patterns []string) interface{} {
+//
+//	@param input
+//	@param patterns
+//	@return interface{}
+func MutiGjsonGet(input []byte, patterns []string, pre string) interface{} {
 
 	for _, k := range patterns {
-		if val := GjsonGet(input, k); val != nil {
+		if val := GjsonGet(input, k, pre); val != nil {
 			return val
 		}
 	}
@@ -22,16 +23,17 @@ func MutiGjsonGet(input []byte, patterns []string) interface{} {
 }
 
 // GjsonGet get JSON value from response map
-//  @param input
-//  @param pattern
-//  @return interface{}
-func GjsonGet(input []byte, pattern string) interface{} {
+//
+//	@param input
+//	@param pattern
+//	@return interface{}
+func GjsonGet(input []byte, pattern string, pre string) interface{} {
 
 	if len(pattern) < 1 {
 		return nil
 	}
 
-	if !strings.HasPrefix(pattern, _pre) {
+	if !strings.HasPrefix(pattern, pre) {
 		return pattern
 	}
 
@@ -49,7 +51,7 @@ func GjsonGet(input []byte, pattern string) interface{} {
 		return nil
 	}
 
-	pattern1 := pattern[1:]
+	pattern1 := strings.TrimPrefix(pattern, pre)
 
 	gr := gjson.GetBytes(input, pattern1)
 

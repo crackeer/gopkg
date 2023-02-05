@@ -1,6 +1,7 @@
 package router
 
 import (
+	"github.com/crackeer/gopkg/mapbuilder"
 	"github.com/crackeer/gopkg/router/api"
 )
 
@@ -10,6 +11,9 @@ type RouterExecuter struct {
 	header     map[string]string
 	input      map[string]interface{}
 	apiFactory api.APIFactory
+
+	meshAPIPrefix    string
+	meshAPISeperator string
 
 	Respone map[string]*api.APIResponse
 	Error   map[string]string
@@ -27,6 +31,9 @@ func NewRouterExecuter(apiFactory api.APIFactory) *RouterExecuter {
 		Respone:    map[string]*api.APIResponse{},
 		Error:      map[string]string{},
 		Data:       map[string]interface{}{},
+
+		meshAPIPrefix:    mapbuilder.DefaultPrefix,
+		meshAPISeperator: mapbuilder.DefaultSeperator,
 	}
 }
 
@@ -47,7 +54,13 @@ func (e *RouterExecuter) UseEnv(env string) *RouterExecuter {
 //	@return *RouterExecuter
 func (e *RouterExecuter) UseHeader(header map[string]string) *RouterExecuter {
 	e.header = header
+	e.Data[api.HeaderKey] = header
 	return e
+}
+
+func (e *RouterExecuter) SetMeshAPIConfig(prefix, seperator string) {
+	e.meshAPIPrefix = prefix
+	e.meshAPISeperator = seperator
 }
 
 // UseInput
@@ -57,6 +70,7 @@ func (e *RouterExecuter) UseHeader(header map[string]string) *RouterExecuter {
 //	@return *RouterExecuter
 func (e *RouterExecuter) UseInput(input map[string]interface{}) *RouterExecuter {
 	e.input = input
+	e.Data[api.InputKey] = input
 	return e
 }
 
@@ -114,4 +128,20 @@ func (executor *RouterExecuter) Static(routerMeta *RouterMeta) error {
 		"env":    executor.env,
 	}
 	return nil
+}
+
+func (executor *RouterExecuter) BuildResponse(routerMeta *RouterMeta) interface{} {
+	if routerMeta.Response == nil {
+		if routerMeta.Mode == ModeRelay {
+			for _, value := range executor.Data {
+				return value
+			}
+		}
+		if routerMeta.Mode == ModeMesh {
+			return executor.Data
+		}
+		return nil
+	}
+	builder, _ := mapbuilder.MapBuilderFrom(executor.Data)
+	return builder.Build(routerMeta.Response)
 }

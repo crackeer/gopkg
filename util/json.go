@@ -106,3 +106,14 @@ func JSONParse(raw string) (interface{}, error) {
 	err := json.Unmarshal([]byte(raw), &result)
 	return result, err
 }
+
+// TryJSONParse
+//
+//	@param raw
+//	@return interface{}
+func TryJSONParse(raw string) interface{} {
+	if value, err := JSONParse(raw); err == nil {
+		return value
+	}
+	return raw
+}

@@ -107,7 +107,6 @@ func (meta *JSONAPI) LoadAll() error {
 				apiMeta.Host = service.Host
 				apiMeta.SignConfig = service.SignConfig
 				cacheKey := FormCacheKey(name, api.Name, env)
-				fmt.Println(cacheKey, apiMeta)
 				meta.container.Store(cacheKey, apiMeta)
 			}
 

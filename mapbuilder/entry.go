@@ -1,48 +1,83 @@
 package mapbuilder
 
 import (
+	"encoding/json"
 	"strings"
-
-	"github.com/crackeer/gopkg/util"
 )
 
-// Build
-//  @param sourceData
-//  @param structData
-//  @return map[string]interface{}
-//  @return error
-func Build(src interface{}, structData map[string]interface{}) (map[string]interface{}, error) {
+const (
+	DefaultSeperator = "?"
+	DefaultPrefix    = "@"
+)
 
-	raws := util.ToString(src)
-	bytes := []byte(raws)
-	retData := map[string]interface{}{}
-	for key, val := range structData {
-		if rv := get(bytes, val); rv != nil {
-			retData[key] = rv
-		}
+// ResponseBuildClient response struct build client
+type MapBuilder struct {
+	Src       interface{}
+	bytes     []byte
+	seperator string
+	prefix    string
+}
+
+func MapBuilderFrom(src interface{}) (*MapBuilder, error) {
+	retData := &MapBuilder{
+		Src:       src,
+		seperator: DefaultSeperator,
+		prefix:    DefaultPrefix,
 	}
-
+	bytes, err := json.Marshal(src)
+	if err != nil {
+		return nil, err
+	}
+	retData.bytes = bytes
 	return retData, nil
 }
 
-func get(input []byte, structObj interface{}) interface{} {
+// UseSeperator
+//
+//	@receiver builder
+//	@param seq
+//	@return *MapBuilder
+func (builder *MapBuilder) UseSeperator(seq string) *MapBuilder {
+	builder.seperator = seq
+	return builder
+}
+
+// UsePre
+//
+//	@receiver builder
+//	@param pre
+//	@return *MapBuilder
+func (builder *MapBuilder) UsePre(pre string) *MapBuilder {
+	builder.prefix = pre
+	return builder
+}
+
+// Build
+//
+//	@receiver builder
+//	@param dest
+//	@return interface{}
+func (builder *MapBuilder) Build(dest interface{}) interface{} {
+	return Build(builder.bytes, dest, builder.prefix, builder.seperator)
+}
+
+func Build(input []byte, structObj interface{}, pre string, seperator string) interface{} {
 
 	if key, ok := structObj.(string); ok {
-		if len(key) > 0 && key[0] != '@' {
+		if !strings.HasPrefix(key, pre) {
 			return key
 		}
-		return MutiGjsonGet(input, strings.Split(key, _sep))
+		return MutiGjsonGet(input, strings.Split(key, seperator), pre)
 	}
 
 	retData := map[string]interface{}{}
 	mapStruct, ok := structObj.(map[string]interface{})
-
 	if !ok {
 		return structObj
 	}
 
 	for k, v := range mapStruct {
-		if val := get(input, v); val != nil {
+		if val := Build(input, v, pre, seperator); val != nil {
 			retData[k] = val
 		}
 	}
