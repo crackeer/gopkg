@@ -27,19 +27,8 @@ type APIResponse struct {
 	OriginBody     []byte
 }
 
-// APIRequest
-type APIRequest struct {
-	*APIMeta
-	Logger
-}
-
 // APIMetaFactory ...
 type APIFactory interface {
 	Get(string, string) *APIMeta
 	LoadAll() error
-}
-
-type Logger interface {
-	Error(map[string]interface{}, string)
-	Info(map[string]interface{}, string)
 }

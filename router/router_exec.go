@@ -3,14 +3,16 @@ package router
 import (
 	"github.com/crackeer/gopkg/mapbuilder"
 	"github.com/crackeer/gopkg/router/api"
+	"github.com/sirupsen/logrus"
 )
 
 // RouterExecuter
 type RouterExecuter struct {
-	env        string
-	header     map[string]string
-	input      map[string]interface{}
-	apiFactory api.APIFactory
+	logrusLogger *logrus.Logger
+	env          string
+	header       map[string]string
+	input        map[string]interface{}
+	apiFactory   api.APIFactory
 
 	meshAPIPrefix    string
 	meshAPISeperator string
@@ -44,6 +46,16 @@ func NewRouterExecuter(apiFactory api.APIFactory) *RouterExecuter {
 //	@return *RouterExecuter
 func (e *RouterExecuter) UseEnv(env string) *RouterExecuter {
 	e.env = env
+	return e
+}
+
+// UseLogrusLogger func
+//
+//	@receiver e
+//	@param logger
+//	@return *RouterExecuter
+func (e *RouterExecuter) UseLogrusLogger(logger *logrus.Logger) *RouterExecuter {
+	e.logrusLogger = logger
 	return e
 }
 
@@ -106,8 +118,7 @@ func (executor *RouterExecuter) Exec(routerMeta *RouterMeta) error {
 //	@param routerMeta
 //	@return error
 func (executor *RouterExecuter) Relay(routerMeta *RouterMeta) error {
-	client := api.NewRequestClient(executor.apiFactory)
-	client.UseEnv(executor.env)
+	client := api.NewRequestClient(executor.apiFactory).UseEnv(executor.env).UseLogrusLogger(executor.logrusLogger)
 	result, err := client.Request(routerMeta.RelayAPI, executor.input, executor.header)
 	executor.Respone[result.Name] = result
 	executor.Data[result.Name] = result.Data
@@ -123,8 +134,7 @@ func (executor *RouterExecuter) Relay(routerMeta *RouterMeta) error {
 //	@param routerMeta
 //	@return error
 func (executor *RouterExecuter) Mesh(routerMeta *RouterMeta) error {
-	client := api.NewRequestClient(executor.apiFactory)
-	client.UseEnv(executor.env)
+	client := api.NewRequestClient(executor.apiFactory).UseEnv(executor.env).UseLogrusLogger(executor.logrusLogger)
 	result, errMap, err := client.Mesh(routerMeta.MeshConfig, executor.input, executor.header)
 	for key, value := range result {
 		executor.Respone[key] = value

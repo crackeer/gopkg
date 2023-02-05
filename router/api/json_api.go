@@ -69,13 +69,11 @@ func NewJSONAPI(prefix string) (*JSONAPI, error) {
 func (meta *JSONAPI) Get(name string, env string) *APIMeta {
 
 	key := GetCacheKeyByAPI(name, env)
-	fmt.Println(key)
 	if value, ok := meta.container.Load(key); ok {
 		return value.(*APIMeta)
 	}
 
 	key = GetCacheKeyByAPI(name, "default")
-	fmt.Println(key)
 	if value, ok := meta.container.Load(key); ok {
 		return value.(*APIMeta)
 	}

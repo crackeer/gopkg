@@ -1,30 +1,33 @@
 package api
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"mime/multipart"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/crackeer/gopkg/util"
-	"github.com/gin-gonic/gin/binding"
+	"github.com/gin-gonic/gin"
 	"github.com/tidwall/gjson"
 )
+
+// APIRequest
+type APIRequest struct {
+	*APIMeta
+	LogEntry *LogEntry
+}
 
 // NewAPIRequest
 //
 //	@param apiMeta
 //	@param logger
 //	@return *APIRequest
-func NewAPIRequest(apiMeta *APIMeta, logger Logger) *APIRequest {
+func NewAPIRequest(apiMeta *APIMeta) *APIRequest {
 	return &APIRequest{
 		APIMeta: apiMeta,
-		Logger:  logger,
 	}
 }
 
@@ -71,10 +74,11 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 		for key, value := range apiRequest.Header {
 			request.Header.Set(key, value)
 		}
-
+		apiRequest.LogEntry = NewLogEntryFromRequest(request)
+		apiRequest.LogEntry.SetStart()
 		client := &http.Client{Timeout: time.Millisecond * time.Duration(apiRequest.Timeout)}
 		response, err = client.Do(request)
-
+		apiRequest.LogEntry.SetEnd()
 		if err != nil {
 			retError = fmt.Errorf("request error: %s", err.Error())
 			break
@@ -88,6 +92,7 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 			retError = fmt.Errorf("read request body error: %s", err.Error())
 			break
 		}
+		apiRequest.LogEntry.AddRespone(byteBody, int64(response.StatusCode))
 
 		// Build response
 		apiResponse.HttpStatusCode = int64(response.StatusCode)
@@ -119,6 +124,9 @@ func (apiRequest *APIRequest) Do(parameter map[string]interface{}, header map[st
 		}
 		break
 	}
+	if retError != nil {
+		apiRequest.LogEntry.AddError(retError.Error())
+	}
 
 	return apiResponse, retError
 }
@@ -135,47 +143,19 @@ func (apiRequest *APIRequest) getPrimary(parameter map[string]interface{}) (stri
 		urlParameter.Set(key, strVal)
 	}
 	if apiRequest.Method == http.MethodGet {
-		fullURL = fmt.Sprintf("%s?%s", fullURL, urlParameter.Encode())
+		if value := urlParameter.Encode(); len(value) > 0 {
+			fullURL = fmt.Sprintf("%s?%s", fullURL, urlParameter.Encode())
+		}
 	}
 
-	if contentType == "application/json" {
+	if contentType == gin.MIMEJSON {
 		byteData, _ := util.Marshal(parameter)
 		body = strings.NewReader(string(byteData))
-	} else if contentType == "application/json" {
+	} else if contentType == gin.MIMEPOSTForm {
 		body = strings.NewReader(urlParameter.Encode())
-	} else if contentType == binding.MIMEMultipartPOSTForm {
-		body, contentType = packMultipart(parameter)
 	}
 
 	return fullURL, contentType, body
-}
-
-func packMultipart(data map[string]interface{}) (*bytes.Buffer, string) {
-	payload := &bytes.Buffer{}
-	writer := multipart.NewWriter(payload)
-	for k, v := range data {
-		if list, ok := v.([]string); ok {
-			for _, item := range list {
-				writer.WriteField(k, item)
-			}
-			continue
-		}
-
-		if fileList, ok := v.([]*multipart.FileHeader); ok {
-			for _, f := range fileList {
-				formFile, _ := writer.CreateFormFile(k, f.Filename)
-				if tmp, err := f.Open(); err == nil {
-					io.Copy(formFile, tmp)
-				}
-			}
-			continue
-		}
-	}
-	err := writer.Close()
-	if err != nil {
-		return nil, ""
-	}
-	return payload, writer.FormDataContentType()
 }
 
 func (apiRequest *APIRequest) getContentType() string {
@@ -188,4 +168,15 @@ func (apiRequest *APIRequest) getContentType() string {
 	}
 
 	return ""
+}
+
+// GetLog GetLogMap
+//
+//	@receiver apiRequest
+//	@return map
+func (apiRequest *APIRequest) GetLog() map[string]interface{} {
+	if apiRequest.LogEntry != nil {
+		return apiRequest.LogEntry.Map()
+	}
+	return nil
 }

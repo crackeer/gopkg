@@ -6,6 +6,7 @@ import (
 
 	"github.com/crackeer/gopkg/mapbuilder"
 	"github.com/crackeer/gopkg/util"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -19,9 +20,9 @@ const (
 
 // RequestClient ...
 type RequestClient struct {
-	factory APIFactory
-	env     string
-	logger  Logger
+	factory      APIFactory
+	env          string
+	logrusLogger *logrus.Logger
 
 	meshAPISeperator string
 	meshAPIPrefix    string
@@ -39,10 +40,29 @@ func NewRequestClient(getter APIFactory) *RequestClient {
 	}
 }
 
-func (client *RequestClient) UseEnv(env string) {
+// UseEnv
+//
+//	@receiver client
+//	@param env
+func (client *RequestClient) UseEnv(env string) *RequestClient {
 	client.env = env
+	return client
 }
 
+// UseLogrusLogger
+//
+//	@receiver client
+//	@param logger
+func (client *RequestClient) UseLogrusLogger(logger *logrus.Logger) *RequestClient {
+	client.logrusLogger = logger
+	return client
+}
+
+// SetMeshAPIConfig
+//
+//	@receiver client
+//	@param prefix
+//	@param seq
 func (client *RequestClient) SetMeshAPIConfig(prefix, seq string) {
 	client.meshAPISeperator = seq
 	client.meshAPIPrefix = prefix
@@ -62,8 +82,15 @@ func (client *RequestClient) Request(apiID string, query map[string]interface{},
 		return nil, fmt.Errorf("api `%s` not found", apiID)
 	}
 
-	apiRequest := NewAPIRequest(apiMeta, client.logger)
-	return apiRequest.Do(query, header)
+	apiRequest := NewAPIRequest(apiMeta)
+	if client.logrusLogger != nil {
+		client.logrusLogger.WithFields(apiRequest.GetLog()).Info("APIRequest")
+	}
+	result, err := apiRequest.Do(query, header)
+	if client.logrusLogger != nil {
+		client.logrusLogger.WithFields(apiRequest.GetLog()).Info("APIRequest")
+	}
+	return result, err
 }
 
 // RequestList
